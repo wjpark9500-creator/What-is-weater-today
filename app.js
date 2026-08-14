@@ -25,8 +25,6 @@ const el = {
   pm10: document.getElementById("statPm10"),
   pm25: document.getElementById("statPm25"),
   locationLabel: document.getElementById("locationLabel"),
-  manualBtn: document.getElementById("manualBtn"),
-  manualPanel: document.getElementById("manualPanel"),
   citySelect: document.getElementById("citySelect"),
   locateBtn: document.getElementById("locateBtn"),
   errorBox: document.getElementById("errorBox"),
@@ -82,7 +80,7 @@ async function loadVerdict({ lat, lon, sido, label }) {
     el.pm25.textContent = pmLabel(data.air.pm25);
     el.stats.hidden = false;
 
-    el.locationLabel.textContent = `${label || data.location.sido} 기준`;
+    el.locationLabel.textContent = `${data.location.label || label || data.location.sido} 기준`;
   } catch (err) {
     el.body.dataset.level = "YELLOW";
     el.message.textContent = "정보를 가져오지 못했어요";
@@ -109,15 +107,10 @@ function locateByGPS() {
     () => {
       showError("위치 권한이 없어 현재 위치를 가져올 수 없어요. 아래에서 지역을 직접 선택해주세요.");
       el.locationLabel.textContent = "위치 권한 필요";
-      el.manualPanel.hidden = false;
     },
     { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
   );
 }
-
-el.manualBtn.addEventListener("click", () => {
-  el.manualPanel.hidden = !el.manualPanel.hidden;
-});
 
 el.citySelect.addEventListener("change", () => {
   const city = CITIES.find((c) => c.name === el.citySelect.value);

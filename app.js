@@ -20,15 +20,44 @@ const el = {
   message: document.getElementById("verdictMessage"),
   sub: document.getElementById("verdictSub"),
   stats: document.getElementById("stats"),
+  dayStats: document.getElementById("dayStats"),
+  labelTemp: document.getElementById("labelTemp"),
+  labelHumid: document.getElementById("labelHumid"),
   temp: document.getElementById("statTemp"),
   humid: document.getElementById("statHumid"),
   pm10: document.getElementById("statPm10"),
   pm25: document.getElementById("statPm25"),
+  pop: document.getElementById("statPop"),
+  wind: document.getElementById("statWind"),
+  score: document.getElementById("statScore"),
   locationLabel: document.getElementById("locationLabel"),
   citySelect: document.getElementById("citySelect"),
   locateBtn: document.getElementById("locateBtn"),
   errorBox: document.getElementById("errorBox"),
+  tabNow: document.getElementById("tabNow"),
+  tabDay: document.getElementById("tabDay"),
+  awaySettings: document.getElementById("awaySettings"),
+  awayStart: document.getElementById("awayStart"),
+  awayEnd: document.getElementById("awayEnd"),
 };
+
+let mode = "now"; // "now" | "day"
+let lastCoords = null; // { lat, lon, sido, label } 마지막으로 조회한 위치 (탭 전환 시 재사용)
+
+// 집 비우는 시간 - localStorage에 저장해서 다음에 켜도 유지
+const AWAY_KEY = "ventApp.awayRange";
+function loadAwayRange() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AWAY_KEY));
+    if (saved?.start && saved?.end) return saved;
+  } catch (_) {}
+  return { start: "08:30", end: "18:30" };
+}
+function saveAwayRange(range) {
+  try {
+    localStorage.setItem(AWAY_KEY, JSON.stringify(range));
+  } catch (_) {}
+}
 
 function populateCitySelect() {
   CITIES.forEach((c) => {
@@ -52,12 +81,32 @@ function pmLabel(value) {
   return `${Math.round(value)}㎍/㎥`;
 }
 
+function applyVerdictUI(verdict) {
+  el.body.dataset.level = verdict.level;
+  el.message.textContent = verdict.message;
+  el.sub.textContent = verdict.minutes ? `권장 환기 시간: ${verdict.minutes}분` : "";
+}
+
 async function loadVerdict({ lat, lon, sido, label }) {
+  lastCoords = { lat, lon, sido, label };
+  if (mode === "day") {
+    await loadDayVerdict();
+  } else {
+    await loadNowVerdict();
+  }
+}
+
+async function loadNowVerdict() {
+  if (!lastCoords) return;
+  const { lat, lon, sido, label } = lastCoords;
   hideError();
   el.body.dataset.level = "loading";
   el.message.textContent = "지금 날씨를 확인하고 있어요…";
   el.sub.textContent = "";
   el.stats.hidden = true;
+  el.dayStats.hidden = true;
+  el.labelTemp.textContent = "기온";
+  el.labelHumid.textContent = "습도";
   el.locationLabel.textContent = label ? `${label} 확인 중…` : "위치 확인 중…";
 
   try {
@@ -65,14 +114,9 @@ async function loadVerdict({ lat, lon, sido, label }) {
     if (sido) params.set("sido", sido);
     const res = await fetch(`/api/verdict?${params.toString()}`);
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || "판정 정보를 가져오지 못했습니다.");
 
-    el.body.dataset.level = data.verdict.level;
-    el.message.textContent = data.verdict.message;
-    el.sub.textContent = data.verdict.minutes
-      ? `권장 환기 시간: ${data.verdict.minutes}분`
-      : "";
+    applyVerdictUI(data.verdict);
 
     el.temp.textContent = data.weather.temperature !== null ? `${data.weather.temperature}℃` : "–";
     el.humid.textContent = data.weather.humidity !== null ? `${data.weather.humidity}%` : "–";
@@ -81,6 +125,55 @@ async function loadVerdict({ lat, lon, sido, label }) {
     el.stats.hidden = false;
 
     el.locationLabel.textContent = `${data.location.label || label || data.location.sido} 기준`;
+  } catch (err) {
+    el.body.dataset.level = "YELLOW";
+    el.message.textContent = "정보를 가져오지 못했어요";
+    el.sub.textContent = "";
+    showError(err.message);
+    el.locationLabel.textContent = "위치 확인 실패";
+  }
+}
+
+async function loadDayVerdict() {
+  if (!lastCoords) return;
+  const { lat, lon, sido, label } = lastCoords;
+  const range = loadAwayRange();
+  hideError();
+  el.body.dataset.level = "loading";
+  el.message.textContent = "오늘 하루 예보를 종합하고 있어요…";
+  el.sub.textContent = "";
+  el.stats.hidden = true;
+  el.dayStats.hidden = true;
+  el.locationLabel.textContent = label ? `${label} 확인 중…` : "위치 확인 중…";
+
+  try {
+    const params = new URLSearchParams({ lat, lon, start: range.start, end: range.end });
+    if (sido) params.set("sido", sido);
+    const res = await fetch(`/api/day-verdict?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "판정 정보를 가져오지 못했습니다.");
+
+    applyVerdictUI(data.verdict);
+
+    const s = data.verdict.summary;
+    el.labelTemp.textContent = "최고기온";
+    el.labelHumid.textContent = "고습 지속";
+    el.temp.textContent = s?.maxTemp != null ? `${Math.round(s.maxTemp)}℃` : "–";
+    el.humid.textContent = s?.humidHours != null ? `${s.humidHours}시간` : "–";
+    el.pm10.textContent = pmLabel(data.air.pm10);
+    el.pm25.textContent = pmLabel(data.air.pm25);
+    el.stats.hidden = false;
+
+    el.pop.textContent = s?.maxPop != null ? `${Math.round(s.maxPop)}%` : "–";
+    el.wind.textContent = s?.avgWind != null ? `${s.avgWind.toFixed(1)}m/s` : "–";
+    el.score.textContent = data.verdict.forced
+      ? "탈락"
+      : data.verdict.score != null
+      ? `${data.verdict.score}점`
+      : "–";
+    el.dayStats.hidden = false;
+
+    el.locationLabel.textContent = `${data.location.label || label || data.location.sido} · ${range.start}~${range.end} 기준`;
   } catch (err) {
     el.body.dataset.level = "YELLOW";
     el.message.textContent = "정보를 가져오지 못했어요";
@@ -119,6 +212,34 @@ el.citySelect.addEventListener("change", () => {
 });
 
 el.locateBtn.addEventListener("click", locateByGPS);
+
+function switchMode(newMode) {
+  if (mode === newMode) return;
+  mode = newMode;
+  el.tabNow.classList.toggle("active", mode === "now");
+  el.tabDay.classList.toggle("active", mode === "day");
+  el.awaySettings.hidden = mode !== "day";
+  if (mode === "day") {
+    loadDayVerdict();
+  } else {
+    loadNowVerdict();
+  }
+}
+
+el.tabNow.addEventListener("click", () => switchMode("now"));
+el.tabDay.addEventListener("click", () => switchMode("day"));
+
+const initialAway = loadAwayRange();
+el.awayStart.value = initialAway.start;
+el.awayEnd.value = initialAway.end;
+
+function onAwayRangeChange() {
+  const range = { start: el.awayStart.value || "08:30", end: el.awayEnd.value || "18:30" };
+  saveAwayRange(range);
+  if (mode === "day") loadDayVerdict();
+}
+el.awayStart.addEventListener("change", onAwayRangeChange);
+el.awayEnd.addEventListener("change", onAwayRangeChange);
 
 // 미세먼지/초미세먼지 기준값 툴팁: 아이콘 탭하면 열림/닫힘 토글, 바깥 탭하면 닫힘
 document.addEventListener("click", (e) => {

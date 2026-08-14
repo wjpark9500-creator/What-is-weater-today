@@ -310,11 +310,13 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// ================= 이스터에그: 창문 두드리기 =================
+// ================= 이스터에그: 창문 두드리기 (풀 3D + 2D 폴백) =================
 // "똑 - 똑도독 - 똑" (5번)을 정확한 리듬까지 검증하기보다,
 // 2.5초 안에 창문을 5번 두드리면 트리거되도록 단순화했습니다.
+// 트리거 전에는 Three.js를 전혀 불러오지 않습니다 (평소 로딩 속도에 영향 없음).
 
 function buildSnowflakes() {
+  // 2D 폴백(Three.js 로드 실패 시)용 눈송이
   const container = document.getElementById("snowstormOverlay");
   if (!container) return;
   const count = 130;
@@ -333,9 +335,29 @@ function buildSnowflakes() {
 }
 buildSnowflakes();
 
+let easter3d = null;
+let easter3dReady = false;
+
+async function loadEaster3D() {
+  if (easter3dReady) return true;
+  try {
+    easter3d = await import("./easter3d.js");
+    const ok = await easter3d.ensureLoaded();
+    if (!ok) return false;
+    const canvasEl = document.getElementById("easter3dCanvas");
+    easter3d.initScene(canvasEl);
+    easter3dReady = true;
+    return true;
+  } catch (err) {
+    console.warn("3D 이스터에그 초기화 실패, 2D로 대체합니다:", err);
+    return false;
+  }
+}
+
 const easterEgg = {
   active: false,
   stage: "idle", // "idle" | "blizzard" | "reveal"
+  mode: null, // "3d" | "2d"
   timer: null,
   knocks: [],
 };
@@ -350,14 +372,26 @@ function registerKnock() {
   }
 }
 
-function startBlizzard() {
+async function startBlizzard() {
   if (easterEgg.active) return;
   easterEgg.active = true;
   easterEgg.stage = "blizzard";
-  document.body.classList.add("easter-egg");
-  document.body.classList.remove("easter-reveal-left", "easter-reveal-right");
+  document.body.classList.add("easter-active");
+  document.body.classList.remove("easter-reveal-left", "easter-reveal-right", "easter-egg", "easter-egg-3d");
+
   clearTimeout(easterEgg.timer);
   easterEgg.timer = setTimeout(endEasterEgg, 5000);
+
+  const ok = await loadEaster3D();
+  if (!easterEgg.active) return; // 로딩 중에 이미 종료된 경우 방지
+  easterEgg.mode = ok ? "3d" : "2d";
+  if (ok) {
+    document.body.classList.add("easter-egg-3d");
+    easter3d.resetReveal();
+    easter3d.start();
+  } else {
+    document.body.classList.add("easter-egg");
+  }
 }
 
 function revealPane(side) {
@@ -367,25 +401,38 @@ function revealPane(side) {
     clearTimeout(easterEgg.timer);
     easterEgg.timer = setTimeout(endEasterEgg, 5000);
   }
-  document.body.classList.add(side === "left" ? "easter-reveal-left" : "easter-reveal-right");
+  if (easterEgg.mode === "3d" && easter3dReady) {
+    if (side === "left") easter3d.revealGirl();
+    else easter3d.revealSnowman();
+  } else {
+    document.body.classList.add(side === "left" ? "easter-reveal-left" : "easter-reveal-right");
+  }
 }
 
 function endEasterEgg() {
   clearTimeout(easterEgg.timer);
   easterEgg.active = false;
   easterEgg.stage = "idle";
-  document.body.classList.remove("easter-egg", "easter-reveal-left", "easter-reveal-right");
+  const wasMode3d = easterEgg.mode === "3d";
+  easterEgg.mode = null;
+  document.body.classList.remove(
+    "easter-active",
+    "easter-egg",
+    "easter-egg-3d",
+    "easter-reveal-left",
+    "easter-reveal-right"
+  );
+  if (wasMode3d && easter3dReady) {
+    setTimeout(() => easter3d.stop(), 500); // 페이드아웃 끝난 뒤 렌더 루프 정지
+  }
 }
 
-const windowSvgEl = document.getElementById("windowSvg");
-if (windowSvgEl) {
-  windowSvgEl.addEventListener("click", (e) => {
-    if (easterEgg.active) {
-      const rect = windowSvgEl.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      revealPane(clickX < rect.width / 2 ? "left" : "right");
-      return;
-    }
+document.addEventListener("click", (e) => {
+  if (easterEgg.active) {
+    revealPane(e.clientX < window.innerWidth / 2 ? "left" : "right");
+    return;
+  }
+  if (e.target.closest("#windowSvg")) {
     registerKnock();
-  });
-}
+  }
+});

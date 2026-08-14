@@ -99,6 +99,7 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   gap: 6px;
   font-size: 13px;
   color: var(--ink-soft);
+  flex: 1;
 }
 
 .away-inputs input[type="time"] {
@@ -126,6 +127,7 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   border-radius: 8px;
   cursor: pointer;
   transition: opacity 200ms ease, transform 150ms ease;
+  margin-left: auto;
 }
 
 .away-save-btn:active {

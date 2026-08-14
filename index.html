@@ -96,9 +96,39 @@
           <line x1="24" y1="120" x2="216" y2="120" class="mullion" />
           <g id="leftPane" class="pane-group">
             <rect x="26" y="26" width="92" height="188" class="pane" />
+            <g class="easter-girl" transform-box="fill-box">
+              <line x1="68" y1="195" x2="62" y2="208" class="girl-limb" />
+              <line x1="76" y1="195" x2="82" y2="208" class="girl-limb" />
+              <path d="M60,165 q12,-10 24,0 l3,30 q-15,8 -30,0 z" class="girl-dress" />
+              <line x1="60" y1="170" x2="47" y2="157" class="girl-skin-line" />
+              <line x1="87" y1="170" x2="99" y2="159" class="girl-skin-line" />
+              <circle cx="73" cy="150" r="13" class="girl-skin" />
+              <circle cx="69" cy="152" r="0.8" class="girl-freckle" />
+              <circle cx="72" cy="154.5" r="0.8" class="girl-freckle" />
+              <circle cx="76" cy="153" r="0.8" class="girl-freckle" />
+              <path d="M60,144 q13,-14 26,0 q-2,-4 -13,-4 q-11,0 -13,4z" class="girl-hair" />
+              <path d="M61,146 q-9,4 -7,17" class="girl-braid" />
+              <path d="M85,146 q9,4 7,17" class="girl-braid" />
+              <circle cx="68" cy="149" r="1.6" class="girl-eye" />
+              <circle cx="78" cy="149" r="1.6" class="girl-eye" />
+              <ellipse cx="73" cy="153.5" rx="2.2" ry="3" class="girl-mouth" />
+            </g>
           </g>
           <g id="rightPane" class="pane-group">
             <rect x="122" y="26" width="92" height="188" class="pane" />
+            <g class="easter-snowman" transform-box="fill-box">
+              <ellipse cx="168" cy="205" rx="20" ry="14" class="snowman-body" />
+              <ellipse cx="168" cy="178" rx="15" ry="12" class="snowman-body" />
+              <circle cx="168" cy="156" r="11" class="snowman-body" />
+              <line x1="153" y1="178" x2="137" y2="167" class="snowman-arm" />
+              <line x1="183" y1="178" x2="199" y2="171" class="snowman-arm" />
+              <path d="M158,164 q10,7 20,0 l-2,7 q-8,4 -16,0 z" class="snowman-scarf" />
+              <polygon points="168,157 179,159 168,161.5" class="snowman-nose" />
+              <circle cx="164" cy="153" r="1.4" class="snowman-face" />
+              <circle cx="172" cy="153" r="1.4" class="snowman-face" />
+              <circle cx="168" cy="175" r="1.4" class="snowman-face" />
+              <circle cx="168" cy="182.5" r="1.4" class="snowman-face" />
+            </g>
           </g>
 
           <g class="scene-fog">
@@ -196,6 +226,8 @@
   <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
     <span class="loading-dots big"><span></span><span></span><span></span></span>
   </div>
+
+  <div class="snowstorm-overlay" id="snowstormOverlay" aria-hidden="true"></div>
 
   <script src="app.js"></script>
 </body>

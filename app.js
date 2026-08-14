@@ -96,6 +96,15 @@ function setLoading(isLoading) {
   el.loadingOverlay.classList.toggle("active", isLoading);
 }
 
+// 응답이 너무 빨라서 로딩창이 깜빡이지도 않고 사라지는 걸 방지 - 최소 노출 시간 보장
+const MIN_LOADING_MS = 350;
+async function ensureMinLoadingTime(startedAt) {
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < MIN_LOADING_MS) {
+    await new Promise((r) => setTimeout(r, MIN_LOADING_MS - elapsed));
+  }
+}
+
 async function loadVerdict({ lat, lon, sido, label }) {
   lastCoords = { lat, lon, sido, label };
   if (mode === "day") {
@@ -110,6 +119,7 @@ async function loadNowVerdict() {
   const { lat, lon, sido, label } = lastCoords;
   hideError();
   setLoading(true);
+  const loadStartedAt = Date.now();
   el.body.dataset.level = "loading";
   el.message.textContent = "지금 날씨를 확인하고 있어요…";
   el.sub.textContent = "";
@@ -142,6 +152,7 @@ async function loadNowVerdict() {
     showError(err.message);
     el.locationLabel.textContent = "위치 확인 실패";
   } finally {
+    await ensureMinLoadingTime(loadStartedAt);
     setLoading(false);
   }
 }
@@ -152,6 +163,7 @@ async function loadDayVerdict() {
   const range = loadAwayRange();
   hideError();
   setLoading(true);
+  const loadStartedAt = Date.now();
   el.body.dataset.level = "loading";
   el.message.textContent = "오늘 하루 예보를 종합하고 있어요…";
   el.sub.textContent = "";
@@ -194,6 +206,7 @@ async function loadDayVerdict() {
     showError(err.message);
     el.locationLabel.textContent = "위치 확인 실패";
   } finally {
+    await ensureMinLoadingTime(loadStartedAt);
     setLoading(false);
   }
 }

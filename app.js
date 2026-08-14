@@ -31,7 +31,7 @@ const el = {
   wind: document.getElementById("statWind"),
   score: document.getElementById("statScore"),
   locationLabel: document.getElementById("locationLabel"),
-  loadingDots: document.getElementById("loadingDots"),
+  loadingOverlay: document.getElementById("loadingOverlay"),
   citySelect: document.getElementById("citySelect"),
   locateBtn: document.getElementById("locateBtn"),
   errorBox: document.getElementById("errorBox"),
@@ -93,7 +93,7 @@ function setLoading(isLoading) {
   el.citySelect.disabled = isLoading;
   el.awayStart.disabled = isLoading;
   el.awayEnd.disabled = isLoading;
-  el.loadingDots.classList.toggle("active", isLoading);
+  el.loadingOverlay.classList.toggle("active", isLoading);
 }
 
 async function loadVerdict({ lat, lon, sido, label }) {

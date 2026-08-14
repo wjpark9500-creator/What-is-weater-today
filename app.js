@@ -40,6 +40,7 @@ const el = {
   awaySettings: document.getElementById("awaySettings"),
   awayStart: document.getElementById("awayStart"),
   awayEnd: document.getElementById("awayEnd"),
+  awaySaveBtn: document.getElementById("awaySaveBtn"),
 };
 
 let mode = "now"; // "now" | "day"
@@ -93,6 +94,7 @@ function setLoading(isLoading) {
   el.citySelect.disabled = isLoading;
   el.awayStart.disabled = isLoading;
   el.awayEnd.disabled = isLoading;
+  el.awaySaveBtn.disabled = isLoading;
   el.loadingOverlay.classList.toggle("active", isLoading);
 }
 
@@ -263,13 +265,12 @@ const initialAway = loadAwayRange();
 el.awayStart.value = initialAway.start;
 el.awayEnd.value = initialAway.end;
 
-function onAwayRangeChange() {
-  const range = { start: el.awayStart.value || "08:30", end: el.awayEnd.value || "18:30" };
+function onAwayRangeSave() {
+  const range = { start: el.awayStart.value || "08:00", end: el.awayEnd.value || "19:00" };
   saveAwayRange(range);
   if (mode === "day") loadDayVerdict();
 }
-el.awayStart.addEventListener("change", onAwayRangeChange);
-el.awayEnd.addEventListener("change", onAwayRangeChange);
+el.awaySaveBtn.addEventListener("click", onAwayRangeSave);
 
 // 미세먼지/초미세먼지 기준값 툴팁: 아이콘 탭하면 열림/닫힘 토글, 바깥 탭하면 닫힘
 document.addEventListener("click", (e) => {

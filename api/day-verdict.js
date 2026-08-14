@@ -100,21 +100,21 @@ function judgeDay({ hourly, pm10, pm25 }) {
   // ---- 강제 탈락 조건 ----
   if (airBad) {
     return {
-      level: "RED", action: "CLOSE", forced: true,
+      level: "RED", action: "CLOSE", forced: true, reason: "AIR_BAD",
       message: "집을 비우는 동안 미세먼지/초미세먼지가 나쁨 수준입니다. 오늘은 닫고 출근하세요.",
       summary,
     };
   }
   if (rainExpected) {
     return {
-      level: "RED", action: "CLOSE", forced: true,
+      level: "RED", action: "CLOSE", forced: true, reason: "RAIN",
       message: "집을 비우는 동안 비가 올 가능성이 높습니다. 빗물 유입을 막기 위해 닫고 출근하세요.",
       summary,
     };
   }
   if (maxTemp !== null && maxTemp > 33) {
     return {
-      level: "RED", action: "CLOSE", forced: true,
+      level: "RED", action: "CLOSE", forced: true, reason: "EXTREME_HEAT",
       message: `집을 비우는 동안 최고 ${Math.round(maxTemp)}℃까지 올라갈 것으로 예상됩니다. 장시간 개방은 피해주세요.`,
       summary,
     };
@@ -143,22 +143,22 @@ function judgeDay({ hourly, pm10, pm25 }) {
   else if (avgWind >= 1.5) score += 5;
   else score += 0; // 바람
 
-  let level, action, message, minutes;
+  let level, action, message, minutes, reason;
   if (score >= 80) {
-    level = "GREEN"; action = "OPEN";
+    level = "GREEN"; action = "OPEN"; reason = "GOOD_DAY";
     message = "오늘 하루 종일 창문을 열어두고 출근해도 좋습니다.";
   } else if (score >= 60) {
-    level = "YELLOW"; action = "SHORT_VENT"; minutes = "10-20";
+    level = "YELLOW"; action = "SHORT_VENT"; minutes = "10-20"; reason = "MOSTLY_GOOD";
     message = "대체로 괜찮지만 낮 동안 다소 덥거나 습해질 수 있어요. 짧게 환기 후 닫는 걸 권장합니다.";
   } else if (score >= 40) {
-    level = "ORANGE"; action = "SHORT_VENT"; minutes = "5-15";
+    level = "ORANGE"; action = "SHORT_VENT"; minutes = "5-15"; reason = "MIXED_CONDITIONS";
     message = "오늘은 낮 동안 덥거나 습한 시간대가 있을 것으로 보입니다. 출근 전 환기 후 닫아주세요.";
   } else {
-    level = "RED"; action = "CLOSE";
+    level = "RED"; action = "CLOSE"; reason = "POOR_DAY";
     message = "오늘 하루 조건이 좋지 않습니다. 닫고 출근하는 것을 권장합니다.";
   }
 
-  return { level, action, minutes, forced: false, message, score, summary };
+  return { level, action, minutes, forced: false, reason, message, score, summary };
 }
 
 export default async function handler(req, res) {
@@ -197,7 +197,7 @@ export default async function handler(req, res) {
         hourly: [],
         air,
         verdict: {
-          level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", forced: false,
+          level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", forced: false, reason: "DATA_MISSING",
           message: "설정하신 시간대의 예보를 찾지 못했어요. 시간대를 다시 확인해주세요 (예보는 오늘 날짜, 앞으로 약 2~3일치만 제공됩니다).",
         },
         updatedAt: new Date().toISOString(),

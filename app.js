@@ -31,6 +31,7 @@ const el = {
   wind: document.getElementById("statWind"),
   score: document.getElementById("statScore"),
   locationLabel: document.getElementById("locationLabel"),
+  loadingDots: document.getElementById("loadingDots"),
   citySelect: document.getElementById("citySelect"),
   locateBtn: document.getElementById("locateBtn"),
   errorBox: document.getElementById("errorBox"),
@@ -87,6 +88,14 @@ function applyVerdictUI(verdict) {
   el.sub.textContent = verdict.minutes ? `권장 환기 시간: ${verdict.minutes}분` : "";
 }
 
+function setLoading(isLoading) {
+  el.locateBtn.disabled = isLoading;
+  el.citySelect.disabled = isLoading;
+  el.awayStart.disabled = isLoading;
+  el.awayEnd.disabled = isLoading;
+  el.loadingDots.classList.toggle("active", isLoading);
+}
+
 async function loadVerdict({ lat, lon, sido, label }) {
   lastCoords = { lat, lon, sido, label };
   if (mode === "day") {
@@ -100,6 +109,7 @@ async function loadNowVerdict() {
   if (!lastCoords) return;
   const { lat, lon, sido, label } = lastCoords;
   hideError();
+  setLoading(true);
   el.body.dataset.level = "loading";
   el.message.textContent = "지금 날씨를 확인하고 있어요…";
   el.sub.textContent = "";
@@ -131,6 +141,8 @@ async function loadNowVerdict() {
     el.sub.textContent = "";
     showError(err.message);
     el.locationLabel.textContent = "위치 확인 실패";
+  } finally {
+    setLoading(false);
   }
 }
 
@@ -139,6 +151,7 @@ async function loadDayVerdict() {
   const { lat, lon, sido, label } = lastCoords;
   const range = loadAwayRange();
   hideError();
+  setLoading(true);
   el.body.dataset.level = "loading";
   el.message.textContent = "오늘 하루 예보를 종합하고 있어요…";
   el.sub.textContent = "";
@@ -180,6 +193,8 @@ async function loadDayVerdict() {
     el.sub.textContent = "";
     showError(err.message);
     el.locationLabel.textContent = "위치 확인 실패";
+  } finally {
+    setLoading(false);
   }
 }
 
@@ -188,6 +203,7 @@ function locateByGPS() {
     showError("이 브라우저는 위치 확인을 지원하지 않습니다. 직접 선택을 이용해주세요.");
     return;
   }
+  setLoading(true);
   el.locationLabel.textContent = "현재 위치 확인 중…";
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -198,6 +214,7 @@ function locateByGPS() {
       });
     },
     () => {
+      setLoading(false);
       showError("위치 권한이 없어 현재 위치를 가져올 수 없어요. 아래에서 지역을 직접 선택해주세요.");
       el.locationLabel.textContent = "위치 권한 필요";
     },

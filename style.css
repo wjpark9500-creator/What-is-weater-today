@@ -239,7 +239,6 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
 
 .frame-outer { fill: var(--frame); transition: fill var(--transition-slow); }
 .frame-inner { fill: #f4f7f5; }
-.mullion { stroke: var(--frame); stroke-width: 4; transition: stroke var(--transition-slow); }
 
 .pane-group {
   transform-box: fill-box;
@@ -633,33 +632,44 @@ body[data-reason="EXTREME_HEAT"] .drip { opacity: 0.35; }
   overflow: hidden;
   z-index: 60;
   opacity: 0;
-  transition: opacity 350ms ease;
+  transition: opacity 300ms ease;
 }
 body.easter-egg .snowstorm-overlay { opacity: 1; }
 
+/* 뿌연 화이트아웃 안개층 - 눈보라를 더 거세보이게 */
+.snowstorm-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.35), rgba(255,255,255,0.7) 85%);
+  animation: haze-pulse 2.2s ease-in-out infinite;
+}
+@keyframes haze-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.95; }
+}
+
 .snowflake {
   position: absolute;
-  top: -12px;
+  top: -14px;
   background: #ffffff;
   border-radius: 50%;
   animation-name: snow-fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
 }
 @keyframes snow-fall {
   0%   { transform: translate(0, 0); }
-  100% { transform: translate(18px, 112vh); }
+  100% { transform: translate(60px, 115vh); }
 }
 
-body.easter-egg #leftPane,
-body.easter-egg #rightPane,
 body.easter-egg #leftPane,
 body.easter-egg #rightPane {
   cursor: pointer;
 }
 
-/* 눈보라 단계 - 판정 장식은 숨기고 창문은 닫힌 채로 격렬하게 흔들림 */
+/* 눈보라 동안 판정 장식은 숨김, 창문은 굳게 닫힌 채 격렬하게 흔들림 */
 body.easter-egg .scene-sun,
 body.easter-egg .scene-clouds,
 body.easter-egg .scene-bird,
@@ -667,64 +677,74 @@ body.easter-egg .scene-dust,
 body.easter-egg .scene-fog {
   opacity: 0 !important;
 }
+body.easter-egg .scene-sky { fill: #4a5568 !important; }
+body.easter-egg .pane { fill-opacity: 0.15; }
+body.easter-egg #leftPane { transform: rotateY(0deg) !important; }
+body.easter-egg #rightPane { transform: rotateY(0deg) !important; }
 
 body.easter-egg #windowSvg {
-  animation: blizzard-shake 320ms ease-in-out infinite;
+  animation: blizzard-shake 220ms ease-in-out infinite;
 }
 @keyframes blizzard-shake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(-3px, 1px) rotate(-1.3deg); }
-  40% { transform: translate(3px, -1px) rotate(1.2deg); }
-  60% { transform: translate(-2px, 0) rotate(-0.9deg); }
-  80% { transform: translate(2px, 1px) rotate(1deg); }
+  15% { transform: translate(-5px, 2px) rotate(-2deg); }
+  30% { transform: translate(5px, -2px) rotate(2deg); }
+  45% { transform: translate(-4px, 1px) rotate(-1.6deg); }
+  60% { transform: translate(4px, 2px) rotate(1.7deg); }
+  75% { transform: translate(-3px, -1px) rotate(-1.2deg); }
+  90% { transform: translate(3px, 1px) rotate(1.3deg); }
 }
 
-body.easter-egg #leftPane { transform: rotateY(0deg); }
-body.easter-egg #rightPane { transform: rotateY(0deg); }
-
-/* 두 번째 단계 - 열어본 쪽만 펼쳐지며 등장인물이 나타남 */
-body.easter-reveal-left #leftPane { transform: rotateY(-58deg); }
-body.easter-reveal-right #rightPane { transform: rotateY(58deg); }
-
-.easter-girl,
-.easter-snowman {
-  opacity: 0;
-}
-
-.girl-limb, .girl-skin-line { stroke: #f1c6a0; stroke-width: 3; stroke-linecap: round; }
+/* ===== 창밖에 나타나는 소녀 (왼쪽 클릭) ===== */
+.easter-girl { opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; }
+.girl-braid { stroke: #7a4a26; stroke-width: 10; fill: none; stroke-linecap: round; }
+.girl-ribbon { fill: #c0463f; }
+.girl-leg { stroke: #4a3728; stroke-width: 7; stroke-linecap: round; }
+.girl-shoe { fill: #3a2b20; }
 .girl-dress { fill: #3f8f8a; }
+.girl-dress-trim { fill: none; stroke: #2e6f6a; stroke-width: 3; }
+.girl-arm { stroke: #f1c6a0; stroke-width: 9; fill: none; stroke-linecap: round; }
 .girl-skin { fill: #f1c6a0; }
+.girl-hair { fill: #8a5a30; }
+.girl-hair-side { stroke: #8a5a30; stroke-width: 10; fill: none; stroke-linecap: round; }
 .girl-freckle { fill: #c98a5e; }
-.girl-hair { fill: #7a4a26; }
-.girl-braid { stroke: #7a4a26; stroke-width: 4; fill: none; stroke-linecap: round; }
-.girl-eye { fill: #2c2c2c; }
+.girl-brow { stroke: #5a3a1e; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+.girl-eye-white { fill: #ffffff; }
+.girl-eye-pupil { fill: #4a3020; }
 .girl-mouth { fill: #7a3b3b; }
+.girl-tongue { fill: #ba5c5c; }
+.girl-blush { fill: #f0a898; opacity: 0.6; }
 
 body.easter-reveal-left .easter-girl {
-  animation: girl-flee 1500ms ease-out forwards;
+  animation: girl-startle-flee 1800ms ease-out forwards;
 }
-@keyframes girl-flee {
-  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg); }
-  14%  { opacity: 1; transform: translate(0, 0) rotate(0deg); }
-  24%  { transform: translate(-2px, 0) rotate(-5deg); }
-  32%  { transform: translate(2px, 0) rotate(5deg); }
-  40%  { transform: translate(-2px, 0) rotate(-4deg); }
-  100% { opacity: 0; transform: translate(-58px, 6px) rotate(-7deg); }
+@keyframes girl-startle-flee {
+  0%   { opacity: 0; transform: translate(0, 6px) scale(0.9); }
+  15%  { opacity: 1; transform: translate(0, 0) scale(1); }
+  26%  { transform: translate(-3px, 0) scale(1) rotate(-4deg); }
+  34%  { transform: translate(3px, 0) scale(1) rotate(4deg); }
+  42%  { transform: translate(-3px, 0) scale(1) rotate(-3deg); }
+  50%  { transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-120px, 10px) scale(0.9) rotate(-8deg); }
 }
 
-.snowman-body { fill: #ffffff; stroke: #d8e5ea; stroke-width: 1; }
-.snowman-arm { stroke: #6b4a2e; stroke-width: 2; stroke-linecap: round; }
+/* ===== 창밖에 나타나는 눈사람 (오른쪽 클릭) ===== */
+.easter-snowman { opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; }
+.snowman-body { fill: #ffffff; stroke: #c3d6de; stroke-width: 2; }
+.snowman-arm { stroke: #8a5a34; stroke-width: 4; fill: none; stroke-linecap: round; }
+.snowman-face { fill: #3a3a3a; }
 .snowman-scarf { fill: #c0463f; }
-.snowman-nose { fill: #e08a2b; }
-.snowman-face { fill: #2c2c2c; }
+.snowman-scarf-tail { fill: #a83d37; }
+.snowman-nose { fill: #e8862c; }
+.snowman-smile { fill: #4a4a4a; }
+.snowman-hat { fill: #2f2f36; }
+.snowman-hat-band { fill: #c0463f; }
 
 body.easter-reveal-right .easter-snowman {
-  opacity: 0;
-  transform: translateY(14px) scale(0.7);
   animation: snowman-pop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 @keyframes snowman-pop {
-  0%   { opacity: 0; transform: translateY(14px) scale(0.7); }
-  70%  { opacity: 1; transform: translateY(-3px) scale(1.05); }
+  0%   { opacity: 0; transform: translateY(18px) scale(0.6); }
+  70%  { opacity: 1; transform: translateY(-4px) scale(1.06); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }

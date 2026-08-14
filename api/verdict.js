@@ -82,15 +82,22 @@ function normalizeSido(raw) {
   return "경기";
 }
 
-async function resolveSido(lat, lon) {
+// 위경도 -> {sido, label} 한 번에 조회 (시/군/구 단위까지 나오도록 zoom=10)
+async function resolveLocation(lat, lon) {
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko&zoom=6`,
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko&zoom=10`,
     { headers: { "User-Agent": "ventilation-app (personal project)" } }
   );
-  if (!res.ok) return "경기";
+  if (!res.ok) return { sido: "경기", label: "내 위치" };
   const data = await res.json();
-  const raw = data?.address?.state || data?.address?.city || "";
-  return normalizeSido(raw);
+  const addr = data?.address || {};
+  const sido = normalizeSido(addr.state || addr.city || "");
+
+  const cityLevel = addr.city || addr.county || addr.town || "";
+  const district = addr.borough || addr.suburb || addr.city_district || "";
+  const label = [cityLevel, district].filter(Boolean).join(" ") || addr.state || "내 위치";
+
+  return { sido, label };
 }
 
 // ---------- 기상청 초단기실황 ----------
@@ -225,10 +232,11 @@ export default async function handler(req, res) {
     const lonNum = parseFloat(lon);
     const { nx, ny } = latLonToGrid(latNum, lonNum);
 
-    const [weather, sidoName] = await Promise.all([
+    const [weather, location] = await Promise.all([
       fetchWeather(nx, ny),
-      sido ? Promise.resolve(sido) : resolveSido(latNum, lonNum),
+      sido ? Promise.resolve({ sido, label: null }) : resolveLocation(latNum, lonNum),
     ]);
+    const sidoName = location.sido;
     const air = await fetchAir(sidoName);
 
     const verdict = judge({
@@ -240,7 +248,7 @@ export default async function handler(req, res) {
     });
 
     return res.status(200).json({
-      location: { lat: latNum, lon: lonNum, sido: sidoName, nx, ny },
+      location: { lat: latNum, lon: lonNum, sido: sidoName, label: location.label, nx, ny },
       weather,
       air,
       verdict,

@@ -173,8 +173,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const startStr = /^\d{1,2}:\d{2}$/.test(start) ? start : "08:30";
-    const endStr = /^\d{1,2}:\d{2}$/.test(end) ? end : "18:30";
+    const startStr = /^\d{1,2}:\d{2}$/.test(start) ? start : "08:00";
+    const endStr = /^\d{1,2}:\d{2}$/.test(end) ? end : "19:00";
     const startMin = toMinutes(startStr);
     const endMin = toMinutes(endStr);
 

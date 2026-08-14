@@ -201,7 +201,7 @@ body[data-level="RED"] .drip { opacity: 0.35; }
 }
 
 .manual-panel {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   justify-content: center;
 }

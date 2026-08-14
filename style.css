@@ -235,6 +235,7 @@ body[data-level="RED"] .drip { opacity: 0.35; }
   border-top-color: #2b3532;
 }
 
+.info-icon.open .tooltip,
 .info-icon:hover .tooltip,
 .info-icon:focus .tooltip {
   display: block;

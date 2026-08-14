@@ -25,6 +25,20 @@
       <button id="locateBtn" class="ghost-btn" title="위치 다시 가져오기">⟳</button>
     </header>
 
+    <div class="mode-tabs" role="tablist">
+      <button class="mode-tab active" id="tabNow" data-mode="now">지금</button>
+      <button class="mode-tab" id="tabDay" data-mode="day">오늘 하루</button>
+    </div>
+
+    <div class="away-settings" id="awaySettings" hidden>
+      <span class="away-label">🏠 집 비우는 시간</span>
+      <div class="away-inputs">
+        <input type="time" id="awayStart" value="08:30" />
+        <span>~</span>
+        <input type="time" id="awayEnd" value="18:30" />
+      </div>
+    </div>
+
     <section class="hero">
       <div class="window-wrap" aria-hidden="true">
         <svg id="windowSvg" viewBox="0 0 240 240" class="window">
@@ -48,11 +62,11 @@
 
     <section class="stats" id="stats" hidden>
       <div class="stat">
-        <span class="stat-label">기온</span>
+        <span class="stat-label" id="labelTemp">기온</span>
         <span class="stat-value" id="statTemp">–</span>
       </div>
       <div class="stat">
-        <span class="stat-label">습도</span>
+        <span class="stat-label" id="labelHumid">습도</span>
         <span class="stat-value" id="statHumid">–</span>
       </div>
       <div class="stat">
@@ -86,6 +100,21 @@
           </span>
         </span>
         <span class="stat-value" id="statPm25">–</span>
+      </div>
+    </section>
+
+    <section class="stats" id="dayStats" hidden>
+      <div class="stat">
+        <span class="stat-label">강수확률</span>
+        <span class="stat-value" id="statPop">–</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">평균풍속</span>
+        <span class="stat-value" id="statWind">–</span>
+      </div>
+      <div class="stat" id="statScoreWrap">
+        <span class="stat-label">환기 점수</span>
+        <span class="stat-value" id="statScore">–</span>
       </div>
     </section>
 

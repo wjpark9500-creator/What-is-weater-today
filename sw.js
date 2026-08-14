@@ -10,6 +10,8 @@ const SHELL_FILES = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];
+// 참고: app.js/style.css/index.html은 네트워크 우선 전략이라
+// 이 목록에 없어도 배포 즉시 최신 버전이 반영됨 (아래 fetch 핸들러 참고)
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

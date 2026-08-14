@@ -58,40 +58,40 @@ function judge({ temperature, humidity, pm10, pm25, rain }) {
   const airModerate = !airBad && (airMissing || pm10Moderate || pm25Moderate);
 
   if (airBad) {
-    return { level: "RED", action: "CLOSE", message: "오늘은 창문을 닫고 출근하는 것을 권장합니다." };
+    return { level: "RED", action: "CLOSE", reason: "AIR_BAD", message: "오늘은 창문을 닫고 출근하는 것을 권장합니다." };
   }
   if (rain) {
-    return { level: "RED", action: "CLOSE", message: "빗물과 습기 유입을 막기 위해 창문을 닫아주세요." };
+    return { level: "RED", action: "CLOSE", reason: "RAIN", message: "빗물과 습기 유입을 막기 위해 창문을 닫아주세요." };
   }
   if (temperature === null || humidity === null) {
     return {
-      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20",
+      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", reason: "DATA_MISSING",
       message: "조건이 애매하므로 출근 전 10~20분 정도 환기하는 것을 권장합니다.",
     };
   }
   if (!airModerate && temperature >= 18 && temperature <= 27 && humidity >= 40 && humidity <= 60) {
-    return { level: "GREEN", action: "OPEN", message: "창문을 조금 열어두고 출근해도 좋습니다." };
+    return { level: "GREEN", action: "OPEN", reason: "COMFORTABLE", message: "창문을 조금 열어두고 출근해도 좋습니다." };
   }
   if (!airModerate && ((temperature > 27 && temperature <= 30) || (humidity > 60 && humidity <= 70))) {
     return {
-      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20",
+      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", reason: "WARM_HUMID",
       message: "출근 전 10~20분 정도 환기한 뒤 창문을 닫는 것을 권장합니다.",
     };
   }
   if (!airModerate && (temperature > 30 || humidity > 70)) {
     return {
-      level: "ORANGE", action: "SHORT_VENT", minutes: "5-15",
+      level: "ORANGE", action: "SHORT_VENT", minutes: "5-15", reason: "HOT_HUMID",
       message: "더위나 습기 유입을 줄이기 위해 5~15분 정도만 환기하고 닫는 것을 권장합니다.",
     };
   }
   if (airModerate) {
     return {
-      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20",
+      level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", reason: "AIR_MODERATE",
       message: "공기질이 보통이므로 10~20분 정도 짧게 환기하는 것을 권장합니다.",
     };
   }
   return {
-    level: "YELLOW", action: "SHORT_VENT", minutes: "10-20",
+    level: "YELLOW", action: "SHORT_VENT", minutes: "10-20", reason: "UNCERTAIN",
     message: "조건이 애매하므로 출근 전 10~20분 정도 환기하는 것을 권장합니다.",
   };
 }

@@ -122,3 +122,11 @@ el.locateBtn.addEventListener("click", locateByGPS);
 
 populateCitySelect();
 locateByGPS();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.warn("서비스워커 등록 실패:", err);
+    });
+  });
+}

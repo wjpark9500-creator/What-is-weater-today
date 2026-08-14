@@ -131,24 +131,26 @@
 
             <g transform="translate(130,78) scale(0.46)">
               <g class="easter-snowman">
-                <circle cx="100" cy="160" r="42" class="snowman-body" />
-                <circle cx="100" cy="103" r="32" class="snowman-body" />
-                <circle cx="100" cy="58" r="24" class="snowman-body" />
-                <path d="M72,100 Q45,90 30,68" class="snowman-arm" />
-                <path d="M128,100 Q155,90 170,68" class="snowman-arm" />
-                <circle cx="100" cy="113" r="3" class="snowman-face" />
-                <circle cx="100" cy="126" r="3" class="snowman-face" />
-                <path d="M78,74 Q100,88 122,74 L120,84 Q100,96 80,84 Z" class="snowman-scarf" />
-                <path d="M112,82 L120,110 L108,108 Z" class="snowman-scarf-tail" />
-                <circle cx="92" cy="53" r="2.6" class="snowman-face" />
-                <circle cx="108" cy="53" r="2.6" class="snowman-face" />
-                <polygon points="100,58 116,62 100,66" class="snowman-nose" />
-                <circle cx="88" cy="70" r="1.6" class="snowman-smile" />
-                <circle cx="94" cy="73" r="1.6" class="snowman-smile" />
-                <circle cx="101" cy="74" r="1.6" class="snowman-smile" />
-                <rect x="82" y="26" width="36" height="8" rx="2" class="snowman-hat" />
-                <rect x="87" y="8" width="26" height="20" rx="2" class="snowman-hat" />
-                <rect x="87" y="20" width="26" height="5" class="snowman-hat-band" />
+                <g class="snowman-idle-wrap">
+                  <circle cx="100" cy="160" r="42" class="snowman-body" />
+                  <circle cx="100" cy="103" r="32" class="snowman-body" />
+                  <circle cx="100" cy="58" r="24" class="snowman-body" />
+                  <path d="M72,100 Q45,90 30,68" class="snowman-arm" />
+                  <path d="M128,100 Q155,90 170,68" class="snowman-arm" />
+                  <circle cx="100" cy="113" r="3" class="snowman-face" />
+                  <circle cx="100" cy="126" r="3" class="snowman-face" />
+                  <path d="M78,74 Q100,88 122,74 L120,84 Q100,96 80,84 Z" class="snowman-scarf" />
+                  <path d="M112,82 L120,110 L108,108 Z" class="snowman-scarf-tail" />
+                  <circle cx="92" cy="53" r="2.6" class="snowman-face" />
+                  <circle cx="108" cy="53" r="2.6" class="snowman-face" />
+                  <polygon points="100,58 116,62 100,66" class="snowman-nose" />
+                  <circle cx="88" cy="70" r="1.6" class="snowman-smile" />
+                  <circle cx="94" cy="73" r="1.6" class="snowman-smile" />
+                  <circle cx="101" cy="74" r="1.6" class="snowman-smile" />
+                  <rect x="82" y="26" width="36" height="8" rx="2" class="snowman-hat" />
+                  <rect x="87" y="8" width="26" height="20" rx="2" class="snowman-hat" />
+                  <rect x="87" y="20" width="26" height="5" class="snowman-hat-band" />
+                </g>
               </g>
             </g>
           </g>
@@ -257,6 +259,10 @@
   </div>
 
   <div class="snowstorm-overlay" id="snowstormOverlay" aria-hidden="true"></div>
+
+  <div class="easter-3d-backdrop" aria-hidden="true"></div>
+  <canvas id="easter3dCanvas" class="easter-3d-canvas" aria-hidden="true"></canvas>
+  <div class="easter-3d-hint">왼쪽을 누르면 소녀가, 오른쪽을 누르면 눈사람이 나타나요</div>
 
   <script src="app.js"></script>
 </body>

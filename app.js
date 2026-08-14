@@ -52,7 +52,7 @@ function loadAwayRange() {
     const saved = JSON.parse(localStorage.getItem(AWAY_KEY));
     if (saved?.start && saved?.end) return saved;
   } catch (_) {}
-  return { start: "08:30", end: "18:30" };
+  return { start: "08:00", end: "19:00" };
 }
 function saveAwayRange(range) {
   try {

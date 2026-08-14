@@ -43,8 +43,55 @@
     <section class="hero">
       <div class="window-wrap" aria-hidden="true">
         <svg id="windowSvg" viewBox="0 0 240 240" class="window">
+          <defs>
+            <clipPath id="sceneClip">
+              <rect x="24" y="24" width="192" height="192" rx="4" />
+            </clipPath>
+          </defs>
+
           <rect x="10" y="10" width="220" height="220" rx="10" class="frame-outer" />
           <rect x="24" y="24" width="192" height="192" rx="4" class="frame-inner" />
+
+          <g clip-path="url(#sceneClip)">
+            <rect class="scene-sky" x="24" y="24" width="192" height="192" />
+
+            <g class="scene-clouds">
+              <g class="cloud cloud-1">
+                <ellipse cx="50" cy="55" rx="18" ry="9" />
+                <ellipse cx="65" cy="50" rx="14" ry="8" />
+                <ellipse cx="35" cy="52" rx="12" ry="7" />
+              </g>
+              <g class="cloud cloud-2">
+                <ellipse cx="150" cy="95" rx="20" ry="10" />
+                <ellipse cx="168" cy="90" rx="14" ry="8" />
+                <ellipse cx="132" cy="93" rx="12" ry="7" />
+              </g>
+              <g class="cloud cloud-3">
+                <ellipse cx="90" cy="150" rx="16" ry="8" />
+                <ellipse cx="105" cy="146" rx="12" ry="7" />
+                <ellipse cx="75" cy="148" rx="10" ry="6" />
+              </g>
+            </g>
+
+            <g class="scene-sun">
+              <g class="sun-rays">
+                <line x1="178" y1="30" x2="178" y2="42" />
+                <line x1="140" y1="45" x2="149" y2="52" />
+                <line x1="216" y1="45" x2="207" y2="52" />
+                <line x1="130" y1="68" x2="142" y2="68" />
+                <line x1="226" y1="68" x2="214" y2="68" />
+              </g>
+              <circle class="sun-body" cx="178" cy="68" r="18" />
+            </g>
+
+            <g class="scene-bird">
+              <ellipse cx="165" cy="203" rx="7" ry="5" class="bird-body" />
+              <circle cx="171" cy="199" r="3" class="bird-body" />
+              <polygon points="173,199 178,200 173,201.5" class="bird-beak" />
+              <path d="M159,203 q-5,-2 -8,1" class="bird-tail" />
+            </g>
+          </g>
+
           <line x1="120" y1="24" x2="120" y2="216" class="mullion" />
           <line x1="24" y1="120" x2="216" y2="120" class="mullion" />
           <g id="leftPane" class="pane-group">
@@ -52,6 +99,20 @@
           </g>
           <g id="rightPane" class="pane-group">
             <rect x="122" y="26" width="92" height="188" class="pane" />
+          </g>
+
+          <g class="scene-fog">
+            <ellipse class="fog-p" cx="70" cy="75" rx="34" ry="28" />
+            <ellipse class="fog-p" cx="152" cy="145" rx="36" ry="30" />
+            <ellipse class="fog-p" cx="100" cy="185" rx="28" ry="20" />
+          </g>
+
+          <g class="scene-dust">
+            <circle class="dust dust-1" cx="20" cy="60" r="3" />
+            <circle class="dust dust-2" cx="30" cy="185" r="2.5" />
+            <circle class="dust dust-3" cx="212" cy="90" r="3" />
+            <circle class="dust dust-4" cx="202" cy="165" r="2" />
+            <circle class="dust dust-5" cx="120" cy="16" r="2.5" />
           </g>
         </svg>
         <div class="drip" id="drip"></div>

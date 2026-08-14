@@ -120,7 +120,6 @@
 
     <section class="location-row">
       <span id="locationLabel" class="location-label">위치 확인 중…</span>
-      <span class="loading-dots" id="loadingDots"><span></span><span></span><span></span></span>
     </section>
 
     <div class="manual-panel">
@@ -131,6 +130,10 @@
 
     <p id="errorBox" class="error-box" hidden></p>
   </main>
+
+  <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+    <span class="loading-dots big"><span></span><span></span><span></span></span>
+  </div>
 
   <script src="app.js"></script>
 </body>

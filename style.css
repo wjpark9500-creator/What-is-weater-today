@@ -99,7 +99,6 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   gap: 6px;
   font-size: 13px;
   color: var(--ink-soft);
-  flex: 1;
 }
 
 .away-inputs input[type="time"] {
@@ -127,7 +126,6 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   border-radius: 8px;
   cursor: pointer;
   transition: opacity 200ms ease, transform 150ms ease;
-  margin-left: auto;
 }
 
 .away-save-btn:active {
@@ -255,21 +253,173 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
 #leftPane  { transform-origin: 0% 50%; }
 #rightPane { transform-origin: 100% 50%; }
 
-/* 상태: CLOSE (기본) */
-body[data-level="RED"] #leftPane,
-body[data-level="loading"] #leftPane { transform: rotateY(0deg); }
-body[data-level="RED"] #rightPane,
-body[data-level="loading"] #rightPane { transform: rotateY(0deg); }
+/* ===== 열림 정도: reason 기준 ===== */
+/* 닫힘 - AIR_BAD, RAIN, EXTREME_HEAT (기본값도 닫힘) */
+body[data-reason="AIR_BAD"] #leftPane,
+body[data-reason="RAIN"] #leftPane,
+body[data-reason="EXTREME_HEAT"] #leftPane { transform: rotateY(0deg); }
+body[data-reason="AIR_BAD"] #rightPane,
+body[data-reason="RAIN"] #rightPane,
+body[data-reason="EXTREME_HEAT"] #rightPane { transform: rotateY(0deg); }
 
-/* 상태: SHORT_VENT — 살짝만 열림 */
-body[data-level="YELLOW"] #leftPane,
-body[data-level="ORANGE"] #leftPane  { transform: rotateY(-22deg); }
-body[data-level="YELLOW"] #rightPane,
-body[data-level="ORANGE"] #rightPane { transform: rotateY(22deg); }
+/* 살짝 열림 - DATA_MISSING, HOT_HUMID, AIR_MODERATE, UNCERTAIN, MOSTLY_GOOD, MIXED_CONDITIONS, POOR_DAY */
+body[data-reason="DATA_MISSING"] #leftPane,
+body[data-reason="HOT_HUMID"] #leftPane,
+body[data-reason="AIR_MODERATE"] #leftPane,
+body[data-reason="UNCERTAIN"] #leftPane,
+body[data-reason="MOSTLY_GOOD"] #leftPane,
+body[data-reason="MIXED_CONDITIONS"] #leftPane,
+body[data-reason="POOR_DAY"] #leftPane { transform: rotateY(-22deg); }
+body[data-reason="DATA_MISSING"] #rightPane,
+body[data-reason="HOT_HUMID"] #rightPane,
+body[data-reason="AIR_MODERATE"] #rightPane,
+body[data-reason="UNCERTAIN"] #rightPane,
+body[data-reason="MOSTLY_GOOD"] #rightPane,
+body[data-reason="MIXED_CONDITIONS"] #rightPane,
+body[data-reason="POOR_DAY"] #rightPane { transform: rotateY(22deg); }
 
-/* 상태: OPEN — 활짝 */
-body[data-level="GREEN"] #leftPane  { transform: rotateY(-52deg); }
-body[data-level="GREEN"] #rightPane { transform: rotateY(52deg); }
+/* 활짝 열림 - COMFORTABLE, WARM_HUMID, GOOD_DAY */
+body[data-reason="COMFORTABLE"] #leftPane,
+body[data-reason="WARM_HUMID"] #leftPane,
+body[data-reason="GOOD_DAY"] #leftPane { transform: rotateY(-52deg); }
+body[data-reason="COMFORTABLE"] #rightPane,
+body[data-reason="WARM_HUMID"] #rightPane,
+body[data-reason="GOOD_DAY"] #rightPane { transform: rotateY(52deg); }
+
+/* ===== 창밖 하늘 배경 ===== */
+.scene-sky { fill: transparent; transition: fill 900ms ease; }
+body[data-reason="COMFORTABLE"] .scene-sky,
+body[data-reason="GOOD_DAY"] .scene-sky,
+body[data-reason="WARM_HUMID"] .scene-sky,
+body[data-reason="HOT_HUMID"] .scene-sky,
+body[data-reason="MOSTLY_GOOD"] .scene-sky {
+  fill: #cdeaf4;
+}
+body[data-reason="AIR_MODERATE"] .scene-sky,
+body[data-reason="MIXED_CONDITIONS"] .scene-sky {
+  fill: #c9ccc3;
+}
+body[data-reason="POOR_DAY"] .scene-sky {
+  fill: #a3a89b;
+}
+
+/* ===== 해 + 햇살 (COMFORTABLE, GOOD_DAY) ===== */
+.scene-sun { opacity: 0; transition: opacity 700ms ease; }
+body[data-reason="COMFORTABLE"] .scene-sun,
+body[data-reason="GOOD_DAY"] .scene-sun {
+  opacity: 1;
+}
+.sun-body { fill: #ffd876; }
+.sun-rays line {
+  stroke: #ffe9b0;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.sun-rays {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: ray-pulse 3200ms ease-in-out infinite;
+}
+@keyframes ray-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+/* ===== 구름 (AIR_MODERATE, MIXED_CONDITIONS, POOR_DAY) ===== */
+.scene-clouds { opacity: 0; transition: opacity 700ms ease; }
+body[data-reason="AIR_MODERATE"] .scene-clouds,
+body[data-reason="MIXED_CONDITIONS"] .scene-clouds,
+body[data-reason="POOR_DAY"] .scene-clouds {
+  opacity: 1;
+}
+.cloud ellipse { fill: #e2e3dd; }
+body[data-reason="POOR_DAY"] .cloud ellipse { fill: #8f938a; }
+.cloud-1 { animation: drift-a 22s ease-in-out infinite; transform-box: fill-box; }
+.cloud-2 { animation: drift-b 26s ease-in-out infinite; transform-box: fill-box; }
+.cloud-3 {
+  opacity: 0;
+  animation: drift-a 19s ease-in-out infinite reverse;
+  transform-box: fill-box;
+}
+body[data-reason="POOR_DAY"] .cloud-3 { opacity: 1; }
+@keyframes drift-a {
+  0%, 100% { transform: translateX(-6px); }
+  50% { transform: translateX(10px); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translateX(8px); }
+  50% { transform: translateX(-8px); }
+}
+
+/* ===== 참새 (COMFORTABLE, GOOD_DAY) ===== */
+.scene-bird {
+  opacity: 0;
+  transform: translateX(38px);
+  transform-box: fill-box;
+}
+body[data-reason="COMFORTABLE"] .scene-bird,
+body[data-reason="GOOD_DAY"] .scene-bird {
+  animation: bird-visit 13s ease-in-out infinite;
+}
+.bird-body { fill: #8a6a4a; }
+.bird-beak { fill: #e0a24e; }
+.bird-tail { stroke: #6b4f36; stroke-width: 1.5; fill: none; }
+@keyframes bird-visit {
+  0%   { opacity: 0; transform: translateX(38px); }
+  10%  { opacity: 1; transform: translateX(0); }
+  55%  { opacity: 1; transform: translateX(0) translateY(-1.5px); }
+  72%  { opacity: 1; transform: translateX(0); }
+  85%  { opacity: 0; transform: translateX(-32px); }
+  100% { opacity: 0; transform: translateX(38px); }
+}
+
+/* ===== 김서림 (EXTREME_HEAT) ===== */
+.scene-fog { opacity: 0; transition: opacity 700ms ease; }
+body[data-reason="EXTREME_HEAT"] .scene-fog { opacity: 1; }
+.fog-p {
+  fill: #ffffff;
+  filter: blur(6px);
+  opacity: 0.4;
+  animation: fog-breathe 4200ms ease-in-out infinite;
+}
+.fog-p:nth-child(2) { animation-delay: -1400ms; }
+.fog-p:nth-child(3) { animation-delay: -2800ms; }
+@keyframes fog-breathe {
+  0%, 100% { opacity: 0.32; }
+  50% { opacity: 0.48; }
+}
+
+/* ===== 흙먼지 + 창문 덜컹거림 (AIR_BAD) ===== */
+.scene-dust { opacity: 0; }
+body[data-reason="AIR_BAD"] .scene-dust { opacity: 1; }
+.dust {
+  fill: #b89a6a;
+  opacity: 0;
+  transform-box: fill-box;
+}
+body[data-reason="AIR_BAD"] .dust { animation: dust-puff 2.4s ease-in-out infinite; }
+body[data-reason="AIR_BAD"] .dust-1 { animation-delay: 0s; }
+body[data-reason="AIR_BAD"] .dust-2 { animation-delay: 0.4s; }
+body[data-reason="AIR_BAD"] .dust-3 { animation-delay: 0.8s; }
+body[data-reason="AIR_BAD"] .dust-4 { animation-delay: 1.2s; }
+body[data-reason="AIR_BAD"] .dust-5 { animation-delay: 1.6s; }
+@keyframes dust-puff {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  30% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-16px) scale(1.15); }
+}
+body[data-reason="AIR_BAD"] #windowSvg {
+  animation: rattle 3.4s ease-in-out infinite;
+}
+@keyframes rattle {
+  0%, 82%, 100% { transform: translate(0, 0) rotate(0deg); }
+  84% { transform: translate(-1.5px, 0) rotate(-0.6deg); }
+  86% { transform: translate(1.5px, 0) rotate(0.6deg); }
+  88% { transform: translate(-1.5px, 0.5px) rotate(-0.5deg); }
+  90% { transform: translate(1.5px, 0) rotate(0.5deg); }
+  92% { transform: translate(-1px, 0) rotate(0deg); }
+  94%, 100% { transform: translate(0, 0) rotate(0deg); }
+}
 
 .drip {
   position: absolute;
@@ -278,7 +428,8 @@ body[data-level="GREEN"] #rightPane { transform: rotateY(52deg); }
   opacity: 0;
   transition: opacity 500ms ease;
 }
-body[data-level="RED"] .drip { opacity: 0.35; }
+body[data-reason="RAIN"] .drip,
+body[data-reason="EXTREME_HEAT"] .drip { opacity: 0.35; }
 .drip::before, .drip::after {
   content: "";
   position: absolute;

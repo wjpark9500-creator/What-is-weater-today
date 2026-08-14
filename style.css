@@ -122,14 +122,27 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   gap: 7px;
 }
 
-.loading-dots {
+.loading-overlay {
+  position: fixed;
+  inset: 0;
   display: none;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 50;
+  pointer-events: none;
 }
 
-.loading-dots.active {
+.loading-overlay.active {
+  display: flex;
+}
+
+.loading-dots {
   display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .loading-dots span {
@@ -144,9 +157,19 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
 .loading-dots span:nth-child(2) { animation-delay: -0.14s; }
 .loading-dots span:nth-child(3) { animation-delay: 0s; }
 
+.loading-dots.big {
+  gap: 10px;
+}
+
+.loading-dots.big span {
+  width: 15px;
+  height: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
 @keyframes dot-bounce {
   0%, 80%, 100% { transform: translateY(0) scale(0.7); opacity: 0.5; }
-  40% { transform: translateY(-5px) scale(1); opacity: 1; }
+  40% { transform: translateY(-8px) scale(1); opacity: 1; }
 }
 
 .eyebrow {

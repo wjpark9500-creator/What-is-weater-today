@@ -1,4 +1,4 @@
-const CACHE_NAME = "vent-app-v1";
+const CACHE_NAME = "vent-app-v3";
 const SHELL_FILES = [
   "/",
   "/index.html",
@@ -43,8 +43,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 앱 셸(정적 파일)은 캐시 우선, 실패 시 네트워크
+  // 앱 셸(정적 파일)은 네트워크 우선 — 온라인이면 항상 최신 파일을 받아오고,
+  // 오프라인일 때만 예전에 캐시해둔 버전을 보여준다.
+  // 이 방식 덕분에 배포할 때마다 CACHE_NAME 버전을 수동으로 올릴 필요가 없다.
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

@@ -1,7 +1,7 @@
 {
   "name": "오늘, 창문 열까?",
   "short_name": "환기가이드",
-  "description": "출근 전 창문을 열어도 될지 알려주는 환기 판정 앱",
+  "description": "지금 창문을 열어도 될지, 오늘 하루 열어둬도 될지 알려주는 환기 가이드 앱",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

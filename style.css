@@ -116,6 +116,27 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   pointer-events: none;
 }
 
+.away-save-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 200ms ease, transform 150ms ease;
+}
+
+.away-save-btn:active {
+  transform: scale(0.95);
+}
+
+.away-save-btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .location-label {
   display: inline-flex;
   align-items: center;

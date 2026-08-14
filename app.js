@@ -85,6 +85,11 @@ function pmLabel(value) {
 
 function applyVerdictUI(verdict) {
   el.body.dataset.level = verdict.level;
+  if (verdict.reason) {
+    el.body.dataset.reason = verdict.reason;
+  } else {
+    delete el.body.dataset.reason;
+  }
   el.message.textContent = verdict.message;
   el.sub.textContent = verdict.minutes ? `권장 환기 시간: ${verdict.minutes}분` : "";
 }
@@ -123,6 +128,7 @@ async function loadNowVerdict() {
   setLoading(true);
   const loadStartedAt = Date.now();
   el.body.dataset.level = "loading";
+  delete el.body.dataset.reason;
   el.message.textContent = "지금 날씨를 확인하고 있어요…";
   el.sub.textContent = "";
   el.stats.hidden = true;
@@ -167,6 +173,7 @@ async function loadDayVerdict() {
   setLoading(true);
   const loadStartedAt = Date.now();
   el.body.dataset.level = "loading";
+  delete el.body.dataset.reason;
   el.message.textContent = "오늘 하루 예보를 종합하고 있어요…";
   el.sub.textContent = "";
   el.stats.hidden = true;

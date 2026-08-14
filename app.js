@@ -120,6 +120,26 @@ el.citySelect.addEventListener("change", () => {
 
 el.locateBtn.addEventListener("click", locateByGPS);
 
+// 미세먼지/초미세먼지 기준값 툴팁: 아이콘 탭하면 열림/닫힘 토글, 바깥 탭하면 닫힘
+document.addEventListener("click", (e) => {
+  const icons = document.querySelectorAll(".info-icon");
+  const tappedIcon = e.target.closest(".info-icon");
+
+  if (tappedIcon) {
+    const willOpen = !tappedIcon.classList.contains("open");
+    icons.forEach((i) => {
+      i.classList.remove("open");
+      i.blur();
+    });
+    if (willOpen) tappedIcon.classList.add("open");
+  } else {
+    icons.forEach((i) => {
+      i.classList.remove("open");
+      i.blur();
+    });
+  }
+});
+
 populateCitySelect();
 locateByGPS();
 

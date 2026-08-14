@@ -645,8 +645,8 @@ body.easter-egg .snowstorm-overlay { opacity: 1; }
   animation: haze-pulse 2.2s ease-in-out infinite;
 }
 @keyframes haze-pulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 0.95; }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
 }
 
 .snowflake {
@@ -665,34 +665,33 @@ body.easter-egg .snowstorm-overlay { opacity: 1; }
 }
 
 body.easter-egg #leftPane,
-body.easter-egg #rightPane {
+body.easter-egg #rightPane,
+body.easter-active #leftPane,
+body.easter-active #rightPane {
   cursor: pointer;
 }
 
-/* 눈보라 동안 판정 장식은 숨김, 창문은 굳게 닫힌 채 격렬하게 흔들림 */
-body.easter-egg .scene-sun,
-body.easter-egg .scene-clouds,
-body.easter-egg .scene-bird,
-body.easter-egg .scene-dust,
-body.easter-egg .scene-fog {
+/* 눈보라 동안 판정 장식은 숨김, 창문은 굳게 닫힌 채 격렬하게 흔들림 (2D 폴백 + 3D 공통) */
+body.easter-active .scene-sun,
+body.easter-active .scene-clouds,
+body.easter-active .scene-bird,
+body.easter-active .scene-dust,
+body.easter-active .scene-fog {
   opacity: 0 !important;
 }
 body.easter-egg .scene-sky { fill: #4a5568 !important; }
 body.easter-egg .pane { fill-opacity: 0.15; }
-body.easter-egg #leftPane { transform: rotateY(0deg) !important; }
-body.easter-egg #rightPane { transform: rotateY(0deg) !important; }
+body.easter-active #leftPane { transform: rotateY(0deg) !important; }
+body.easter-active #rightPane { transform: rotateY(0deg) !important; }
 
-body.easter-egg #windowSvg {
-  animation: blizzard-shake 220ms ease-in-out infinite;
+body.easter-active #windowSvg {
+  animation: blizzard-shake 340ms ease-in-out infinite;
 }
 @keyframes blizzard-shake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  15% { transform: translate(-5px, 2px) rotate(-2deg); }
-  30% { transform: translate(5px, -2px) rotate(2deg); }
-  45% { transform: translate(-4px, 1px) rotate(-1.6deg); }
-  60% { transform: translate(4px, 2px) rotate(1.7deg); }
-  75% { transform: translate(-3px, -1px) rotate(-1.2deg); }
-  90% { transform: translate(3px, 1px) rotate(1.3deg); }
+  25% { transform: translate(-2.5px, 1px) rotate(-0.9deg); }
+  50% { transform: translate(2.5px, -1px) rotate(0.9deg); }
+  75% { transform: translate(-1.5px, 0.5px) rotate(-0.6deg); }
 }
 
 /* ===== 창밖에 나타나는 소녀 (왼쪽 클릭) ===== */
@@ -716,16 +715,15 @@ body.easter-egg #windowSvg {
 .girl-blush { fill: #f0a898; opacity: 0.6; }
 
 body.easter-reveal-left .easter-girl {
-  animation: girl-startle-flee 1800ms ease-out forwards;
+  animation: girl-startle-flee 2400ms cubic-bezier(0.33, 0.9, 0.4, 1) forwards;
 }
 @keyframes girl-startle-flee {
-  0%   { opacity: 0; transform: translate(0, 6px) scale(0.9); }
-  15%  { opacity: 1; transform: translate(0, 0) scale(1); }
-  26%  { transform: translate(-3px, 0) scale(1) rotate(-4deg); }
-  34%  { transform: translate(3px, 0) scale(1) rotate(4deg); }
-  42%  { transform: translate(-3px, 0) scale(1) rotate(-3deg); }
-  50%  { transform: translate(0, 0) scale(1) rotate(0deg); }
-  100% { opacity: 0; transform: translate(-120px, 10px) scale(0.9) rotate(-8deg); }
+  0%   { opacity: 0; transform: translate(8px, 16px) scale(0.7); }
+  20%  { opacity: 1; transform: translate(0, -2px) scale(1.04); }
+  32%  { transform: translate(0, 0) scale(1) rotate(-2deg); }
+  44%  { transform: translate(0, -1px) scale(1) rotate(2deg); }
+  58%  { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-135px, -10px) scale(0.92) rotate(-9deg); }
 }
 
 /* ===== 창밖에 나타나는 눈사람 (오른쪽 클릭) ===== */
@@ -741,10 +739,72 @@ body.easter-reveal-left .easter-girl {
 .snowman-hat-band { fill: #c0463f; }
 
 body.easter-reveal-right .easter-snowman {
-  animation: snowman-pop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: snowman-pop 950ms cubic-bezier(0.3, 1.35, 0.5, 1) forwards;
 }
 @keyframes snowman-pop {
   0%   { opacity: 0; transform: translateY(18px) scale(0.6); }
   70%  { opacity: 1; transform: translateY(-4px) scale(1.06); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.snowman-idle-wrap {
+  transform-box: fill-box;
+  transform-origin: 50% 95%;
+}
+body.easter-reveal-right .snowman-idle-wrap {
+  animation: snowman-idle-sway 2800ms ease-in-out 950ms infinite;
+}
+@keyframes snowman-idle-sway {
+  0%, 100% { transform: rotate(-1.6deg); }
+  50% { transform: rotate(1.6deg); }
+}
+
+/* ================= 이스터에그: 풀 3D (Three.js) ================= */
+
+.easter-3d-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  background: linear-gradient(180deg, #16223b 0%, #2c3e5c 55%, #445269 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 550ms ease;
+}
+body.easter-egg-3d .easter-3d-backdrop {
+  opacity: 0.92;
+}
+
+.easter-3d-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 70;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 550ms ease;
+}
+body.easter-egg-3d .easter-3d-canvas {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.easter-3d-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  z-index: 71;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 550ms ease;
+}
+body.easter-egg-3d .easter-3d-hint {
+  opacity: 1;
 }

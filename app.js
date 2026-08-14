@@ -317,17 +317,17 @@ if ("serviceWorker" in navigator) {
 function buildSnowflakes() {
   const container = document.getElementById("snowstormOverlay");
   if (!container) return;
-  const count = 55;
+  const count = 130;
   for (let i = 0; i < count; i++) {
     const flake = document.createElement("span");
     flake.className = "snowflake";
-    const size = 3 + Math.random() * 5;
+    const size = 3 + Math.random() * 7;
     flake.style.left = `${Math.random() * 100}%`;
     flake.style.width = `${size}px`;
     flake.style.height = `${size}px`;
-    flake.style.opacity = (0.5 + Math.random() * 0.5).toFixed(2);
-    flake.style.animationDuration = `${2.5 + Math.random() * 3}s`;
-    flake.style.animationDelay = `-${Math.random() * 6}s`;
+    flake.style.opacity = (0.6 + Math.random() * 0.4).toFixed(2);
+    flake.style.animationDuration = `${0.9 + Math.random() * 1.4}s`;
+    flake.style.animationDelay = `-${Math.random() * 3}s`;
     container.appendChild(flake);
   }
 }
@@ -381,8 +381,9 @@ const windowSvgEl = document.getElementById("windowSvg");
 if (windowSvgEl) {
   windowSvgEl.addEventListener("click", (e) => {
     if (easterEgg.active) {
-      const pane = e.target.closest("#leftPane, #rightPane");
-      if (pane) revealPane(pane.id === "leftPane" ? "left" : "right");
+      const rect = windowSvgEl.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      revealPane(clickX < rect.width / 2 ? "left" : "right");
       return;
     }
     registerKnock();

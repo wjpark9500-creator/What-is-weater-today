@@ -309,3 +309,82 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+// ================= 이스터에그: 창문 두드리기 =================
+// "똑 - 똑도독 - 똑" (5번)을 정확한 리듬까지 검증하기보다,
+// 2.5초 안에 창문을 5번 두드리면 트리거되도록 단순화했습니다.
+
+function buildSnowflakes() {
+  const container = document.getElementById("snowstormOverlay");
+  if (!container) return;
+  const count = 55;
+  for (let i = 0; i < count; i++) {
+    const flake = document.createElement("span");
+    flake.className = "snowflake";
+    const size = 3 + Math.random() * 5;
+    flake.style.left = `${Math.random() * 100}%`;
+    flake.style.width = `${size}px`;
+    flake.style.height = `${size}px`;
+    flake.style.opacity = (0.5 + Math.random() * 0.5).toFixed(2);
+    flake.style.animationDuration = `${2.5 + Math.random() * 3}s`;
+    flake.style.animationDelay = `-${Math.random() * 6}s`;
+    container.appendChild(flake);
+  }
+}
+buildSnowflakes();
+
+const easterEgg = {
+  active: false,
+  stage: "idle", // "idle" | "blizzard" | "reveal"
+  timer: null,
+  knocks: [],
+};
+
+function registerKnock() {
+  const now = Date.now();
+  easterEgg.knocks.push(now);
+  easterEgg.knocks = easterEgg.knocks.filter((t) => now - t < 2500);
+  if (easterEgg.knocks.length >= 5) {
+    easterEgg.knocks = [];
+    startBlizzard();
+  }
+}
+
+function startBlizzard() {
+  if (easterEgg.active) return;
+  easterEgg.active = true;
+  easterEgg.stage = "blizzard";
+  document.body.classList.add("easter-egg");
+  document.body.classList.remove("easter-reveal-left", "easter-reveal-right");
+  clearTimeout(easterEgg.timer);
+  easterEgg.timer = setTimeout(endEasterEgg, 5000);
+}
+
+function revealPane(side) {
+  if (!easterEgg.active) return;
+  if (easterEgg.stage === "blizzard") {
+    easterEgg.stage = "reveal";
+    clearTimeout(easterEgg.timer);
+    easterEgg.timer = setTimeout(endEasterEgg, 5000);
+  }
+  document.body.classList.add(side === "left" ? "easter-reveal-left" : "easter-reveal-right");
+}
+
+function endEasterEgg() {
+  clearTimeout(easterEgg.timer);
+  easterEgg.active = false;
+  easterEgg.stage = "idle";
+  document.body.classList.remove("easter-egg", "easter-reveal-left", "easter-reveal-right");
+}
+
+const windowSvgEl = document.getElementById("windowSvg");
+if (windowSvgEl) {
+  windowSvgEl.addEventListener("click", (e) => {
+    if (easterEgg.active) {
+      const pane = e.target.closest("#leftPane, #rightPane");
+      if (pane) revealPane(pane.id === "leftPane" ? "left" : "right");
+      return;
+    }
+    registerKnock();
+  });
+}

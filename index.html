@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>오늘, 창문 열까?</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body data-level="loading">
+
+  <main class="stage">
+    <header class="topbar">
+      <span class="eyebrow">출근 환기 가이드</span>
+      <button id="locateBtn" class="ghost-btn" title="위치 다시 가져오기">⟳</button>
+    </header>
+
+    <section class="hero">
+      <div class="window-wrap" aria-hidden="true">
+        <svg id="windowSvg" viewBox="0 0 240 240" class="window">
+          <rect x="10" y="10" width="220" height="220" rx="10" class="frame-outer" />
+          <rect x="24" y="24" width="192" height="192" rx="4" class="frame-inner" />
+          <line x1="120" y1="24" x2="120" y2="216" class="mullion" />
+          <line x1="24" y1="120" x2="216" y2="120" class="mullion" />
+          <g id="leftPane" class="pane-group">
+            <rect x="26" y="26" width="92" height="188" class="pane" />
+          </g>
+          <g id="rightPane" class="pane-group">
+            <rect x="122" y="26" width="92" height="188" class="pane" />
+          </g>
+        </svg>
+        <div class="drip" id="drip"></div>
+      </div>
+
+      <h1 id="verdictMessage" class="verdict-message">지금 위치의 날씨를 확인하고 있어요…</h1>
+      <p id="verdictSub" class="verdict-sub">잠시만 기다려주세요</p>
+    </section>
+
+    <section class="stats" id="stats" hidden>
+      <div class="stat">
+        <span class="stat-label">기온</span>
+        <span class="stat-value" id="statTemp">–</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">습도</span>
+        <span class="stat-value" id="statHumid">–</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">미세먼지</span>
+        <span class="stat-value" id="statPm10">–</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">초미세먼지</span>
+        <span class="stat-value" id="statPm25">–</span>
+      </div>
+    </section>
+
+    <section class="location-row">
+      <span id="locationLabel" class="location-label">위치 확인 중…</span>
+      <button id="manualBtn" class="text-btn">직접 선택</button>
+    </section>
+
+    <div id="manualPanel" class="manual-panel" hidden>
+      <select id="citySelect">
+        <option value="">지역을 선택하세요</option>
+      </select>
+    </div>
+
+    <p id="errorBox" class="error-box" hidden></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

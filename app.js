@@ -402,8 +402,8 @@ function revealPane(side) {
     easterEgg.timer = setTimeout(endEasterEgg, 5000);
   }
   if (easterEgg.mode === "3d" && easter3dReady) {
-    if (side === "left") easter3d.revealGirl();
-    else easter3d.revealSnowman();
+    if (side === "left") easter3d.revealLeft();
+    else easter3d.revealRight();
   } else {
     document.body.classList.add(side === "left" ? "easter-reveal-left" : "easter-reveal-right");
   }

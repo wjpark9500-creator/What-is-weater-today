@@ -4,14 +4,15 @@
 let THREE;
 let renderer, scene, camera;
 let snowGeometry, snowPoints, snowVelocities;
-let girlGroup, snowmanGroup;
+let leftGroup, rightGroup;
+let gltfLoader = null;
 let animId = null;
 let initialized = false;
 
-let girlProgress = 0;
-let snowmanProgress = 0;
-let girlTarget = 0;
-let snowmanTarget = 0;
+let leftProgress = 0;
+let rightProgress = 0;
+let leftTarget = 0;
+let rightTarget = 0;
 
 const SNOW_COUNT = 1400;
 
@@ -53,18 +54,26 @@ function buildSnow() {
   scene.add(snowPoints);
 }
 
-async function buildSnowman() {
-  const wrapper = new THREE.Group();
-
+async function getLoader() {
+  if (gltfLoader) return gltfLoader;
   const { GLTFLoader } = await import(
     "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
   );
-  const loader = new GLTFLoader();
-  const gltf = await loader.loadAsync("./assets/models/snowman.glb");
+  const { MeshoptDecoder } = await import(
+    "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js"
+  );
+  gltfLoader = new GLTFLoader();
+  gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  return gltfLoader;
+}
+
+// 공통 GLB 로더: 원본 모델 크기가 제각각이므로 목표 높이에 맞춰 자동 스케일 + 바닥을 y=0에 맞춤
+async function loadCharacter(url, { targetHeight, x, baseY }) {
+  const wrapper = new THREE.Group();
+  const loader = await getLoader();
+  const gltf = await loader.loadAsync(url);
   const model = gltf.scene;
 
-  // 모델 원본 크기가 제각각이므로, 목표 높이에 맞춰 자동 스케일 + 바닥을 y=0에 맞춤
-  const targetHeight = 3.6;
   let box = new THREE.Box3().setFromObject(model);
   let size = new THREE.Vector3();
   box.getSize(size);
@@ -79,82 +88,20 @@ async function buildSnowman() {
   model.position.y -= box.min.y;
 
   wrapper.add(model);
-  wrapper.position.set(2.7, -1.2, 0);
+  wrapper.position.set(x, baseY, 0);
   wrapper.scale.setScalar(0.0001);
-  wrapper.userData.baseY = -1.2;
+  wrapper.userData.baseY = baseY;
   return wrapper;
 }
 
-function buildGirl() {
-  const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color: 0xf1c6a0, roughness: 0.55 });
-  const dress = new THREE.MeshStandardMaterial({ color: 0x3f8f8a, roughness: 0.5 });
-  const hair = new THREE.MeshStandardMaterial({ color: 0x8a5a30, roughness: 0.6 });
-  const shoe = new THREE.MeshStandardMaterial({ color: 0x3a2b20, roughness: 0.5 });
-  const ribbon = new THREE.MeshStandardMaterial({ color: 0xc0463f, roughness: 0.5 });
-
-  const body = new THREE.Mesh(new THREE.ConeGeometry(0.72, 1.3, 16, 1, true), dress);
-  body.position.y = 1.45;
-  g.add(body);
-
-  const legGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.85, 10);
-  const legL = new THREE.Mesh(legGeo, skin); legL.position.set(-0.2, 0.42, 0);
-  const legR = new THREE.Mesh(legGeo, skin); legR.position.set(0.2, 0.42, 0);
-  g.add(legL, legR);
-
-  const shoeL = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), shoe); shoeL.position.set(-0.2, 0, 0.04);
-  const shoeR = shoeL.clone(); shoeR.position.x = 0.2;
-  g.add(shoeL, shoeR);
-
-  const braidGeo = new THREE.CylinderGeometry(0.085, 0.055, 1.05, 10);
-  const braidL = new THREE.Mesh(braidGeo, hair);
-  braidL.position.set(-0.6, 1.95, -0.1);
-  braidL.rotation.z = Math.PI / 11;
-  const braidR = braidL.clone();
-  braidR.position.x = 0.6;
-  braidR.rotation.z = -Math.PI / 11;
-  g.add(braidL, braidR);
-
-  const ribbonL = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 10), ribbon);
-  ribbonL.position.set(-0.64, 1.46, -0.1);
-  const ribbonR = ribbonL.clone(); ribbonR.position.x = 0.64;
-  g.add(ribbonL, ribbonR);
-
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.16, 12), skin);
-  neck.position.y = 2.15;
-  g.add(neck);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.54, 24, 18), skin);
-  head.position.y = 2.5;
-  g.add(head);
-
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.565, 20, 14, 0, Math.PI * 2, 0, Math.PI / 1.9),
-    hair
-  );
-  cap.position.y = 2.58;
-  g.add(cap);
-
-  const armGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.7, 10);
-  const armL = new THREE.Mesh(armGeo, skin);
-  armL.position.set(-0.5, 2.05, 0);
-  armL.rotation.z = Math.PI / 2.3;
-  const armR = armL.clone();
-  armR.position.x = 0.5;
-  armR.rotation.z = -Math.PI / 2.3;
-  g.add(armL, armR);
-
-  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), skin);
-  handL.position.set(-0.85, 2.28, 0);
-  const handR = handL.clone();
-  handR.position.x = 0.85;
-  g.add(handL, handR);
-
-  g.position.set(-2.7, -1.2, 0);
-  g.scale.setScalar(0.0001);
-  g.userData.baseY = -1.2;
-  return g;
+function buildBoy() {
+  return loadCharacter("./assets/models/boy.glb", { targetHeight: 3.3, x: -2.7, baseY: -1.35 });
 }
+
+function buildSnowman() {
+  return loadCharacter("./assets/models/snowman.glb", { targetHeight: 3.6, x: 2.7, baseY: -1.2 });
+}
+
 
 export async function initScene(canvasEl) {
   if (initialized) return;
@@ -175,9 +122,9 @@ export async function initScene(canvasEl) {
   scene.add(fillLight);
 
   buildSnow();
-  girlGroup = buildGirl();
-  snowmanGroup = await buildSnowman();
-  scene.add(girlGroup, snowmanGroup);
+  leftGroup = await buildBoy();
+  rightGroup = await buildSnowman();
+  scene.add(leftGroup, rightGroup);
 
   window.addEventListener("resize", onResize);
   initialized = true;
@@ -197,19 +144,19 @@ function easeOutBack(t) {
   return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 }
 
-export function revealGirl() {
-  girlTarget = 1;
+export function revealLeft() {
+  leftTarget = 1;
 }
-export function revealSnowman() {
-  snowmanTarget = 1;
+export function revealRight() {
+  rightTarget = 1;
 }
 export function resetReveal() {
-  girlTarget = 0;
-  snowmanTarget = 0;
-  girlProgress = 0;
-  snowmanProgress = 0;
-  if (girlGroup) girlGroup.scale.setScalar(0.0001);
-  if (snowmanGroup) snowmanGroup.scale.setScalar(0.0001);
+  leftTarget = 0;
+  rightTarget = 0;
+  leftProgress = 0;
+  rightProgress = 0;
+  if (leftGroup) leftGroup.scale.setScalar(0.0001);
+  if (rightGroup) rightGroup.scale.setScalar(0.0001);
 }
 
 function animate(time) {
@@ -224,20 +171,20 @@ function animate(time) {
   }
   snowGeometry.attributes.position.needsUpdate = true;
 
-  girlProgress += (girlTarget - girlProgress) * 0.07;
-  snowmanProgress += (snowmanTarget - snowmanProgress) * 0.07;
-  const gScale = Math.max(easeOutBack(girlProgress), 0.0001);
-  const sScale = Math.max(easeOutBack(snowmanProgress), 0.0001);
-  girlGroup.scale.setScalar(gScale);
-  snowmanGroup.scale.setScalar(sScale);
+  leftProgress += (leftTarget - leftProgress) * 0.07;
+  rightProgress += (rightTarget - rightProgress) * 0.07;
+  const gScale = Math.max(easeOutBack(leftProgress), 0.0001);
+  const sScale = Math.max(easeOutBack(rightProgress), 0.0001);
+  leftGroup.scale.setScalar(gScale);
+  rightGroup.scale.setScalar(sScale);
 
-  if (girlTarget > 0) {
-    girlGroup.rotation.y = Math.sin(t * 1.3) * 0.28;
-    girlGroup.position.y = girlGroup.userData.baseY + Math.sin(t * 2.1) * 0.05;
+  if (leftTarget > 0) {
+    leftGroup.rotation.y = Math.sin(t * 1.3) * 0.28;
+    leftGroup.position.y = leftGroup.userData.baseY + Math.sin(t * 2.1) * 0.05;
   }
-  if (snowmanTarget > 0) {
-    snowmanGroup.rotation.y = Math.sin(t * 0.75) * 0.16;
-    snowmanGroup.position.y = snowmanGroup.userData.baseY + Math.sin(t * 1.6 + 1) * 0.04;
+  if (rightTarget > 0) {
+    rightGroup.rotation.y = Math.sin(t * 0.75) * 0.16;
+    rightGroup.position.y = rightGroup.userData.baseY + Math.sin(t * 1.6 + 1) * 0.04;
   }
 
   camera.position.x = Math.sin(t * 0.15) * 0.45;

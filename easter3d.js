@@ -64,9 +64,9 @@ async function getLoader() {
 }
 
 // 장갑처럼 좌우 팔에 걸쳐 하나로 합쳐진 메쉬를 반으로 쪼개 각 팔 노드에 다시 붙임
-function splitMeshBetweenArms(model, meshName, leftArmNode, rightArmNode) {
+function splitMeshOntoPivots(model, meshName, leftPivot, rightPivot) {
   const mesh = model.getObjectByName(meshName);
-  if (!mesh || !mesh.isMesh || !leftArmNode || !rightArmNode) return;
+  if (!mesh || !mesh.isMesh) return;
 
   mesh.updateWorldMatrix(true, false);
   const worldMatrix = mesh.matrixWorld.clone();
@@ -89,26 +89,28 @@ function splitMeshBetweenArms(model, meshName, leftArmNode, rightArmNode) {
     (sumX / 3 < 0 ? leftIdx : rightIdx).push(...tri);
   }
 
-  function buildHalf(indices, parentNode) {
+  const bakedGeom = geom.clone();
+  bakedGeom.applyMatrix4(worldMatrix); // 정점을 현재 월드 좌표로 구움 (좌우 조각이 이 좌표를 공유)
+
+  function attach(indices, pivot) {
     if (indices.length === 0) return;
-    const g = geom.clone();
+    const g = bakedGeom.clone();
     g.setIndex(indices);
-    g.applyMatrix4(worldMatrix); // 정점을 월드 좌표로 구움
     const half = new THREE.Mesh(g, mesh.material);
-    parentNode.updateWorldMatrix(true, false);
-    const parentInverse = new THREE.Matrix4().copy(parentNode.matrixWorld).invert();
-    half.matrix.copy(parentInverse);
+    pivot.updateWorldMatrix(true, false);
+    const pivotInverse = new THREE.Matrix4().copy(pivot.matrixWorld).invert();
+    half.matrix.copy(pivotInverse);
     half.matrix.decompose(half.position, half.quaternion, half.scale);
-    parentNode.add(half);
+    pivot.add(half);
   }
 
-  buildHalf(leftIdx, leftArmNode);
-  buildHalf(rightIdx, rightArmNode);
+  attach(leftIdx, leftPivot);
+  attach(rightIdx, rightPivot);
   mesh.parent.remove(mesh);
 }
 
 // 공통 GLB 로더: 원본 모델 크기가 제각각이므로 목표 높이에 맞춰 자동 스케일 + 바닥을 y=0에 맞춤
-async function loadCharacter(url, { targetHeight, x, baseY, partNames, glovesMesh }) {
+async function loadCharacter(url, { targetHeight, x, baseY, armPivots, armMeshNames }) {
   const wrapper = new THREE.Group();
   const loader = await getLoader();
   const gltf = await loader.loadAsync(url);
@@ -133,30 +135,42 @@ async function loadCharacter(url, { targetHeight, x, baseY, partNames, glovesMes
   wrapper.userData.baseX = x;
   wrapper.userData.baseY = baseY;
 
-  // 이름이 있는 부위(팔 등)를 찾아서 따로 움직이거나, 나머지 몸통을 숨길 수 있도록 저장
+  // 팔(+장갑 등 딸린 부품)을 어깨 위치에 새 피벗을 만들어 좌/우로 재조립
+  // (원본 모델은 "Vert"/"Cylinder" 각각이 양쪽 팔을 동시에 포함하고 있어서,
+  //  이름 기준으로는 좌/우를 분리할 수 없어 좌표(x부호) 기준으로 직접 쪼갬)
   wrapper.userData.parts = {};
-  wrapper.userData.bodyMeshes = [];
-  if (partNames && partNames.length) {
-    const armObjs = partNames.map((n) => model.getObjectByName(n)).filter(Boolean);
-    partNames.forEach((n, i) => {
-      if (armObjs[i]) wrapper.userData.parts[n] = armObjs[i];
-    });
-    if (glovesMesh && armObjs.length === 2) {
-      splitMeshBetweenArms(model, glovesMesh, armObjs[0], armObjs[1]);
-    }
+  wrapper.userData.bodyGroup = null;
+  if (armPivots && armMeshNames && armMeshNames.length) {
+    const leftPivot = new THREE.Group();
+    leftPivot.position.set(...armPivots.left);
+    model.add(leftPivot);
+    const rightPivot = new THREE.Group();
+    rightPivot.position.set(...armPivots.right);
+    model.add(rightPivot);
+
+    armMeshNames.forEach((name) => splitMeshOntoPivots(model, name, leftPivot, rightPivot));
+
+    wrapper.userData.parts = { left: leftPivot, right: rightPivot };
+
     const isDescendantOfArm = (obj) => {
       let p = obj;
       while (p) {
-        if (armObjs.includes(p)) return true;
+        if (p === leftPivot || p === rightPivot) return true;
         p = p.parent;
       }
       return false;
     };
+    const bodyMeshesFound = [];
     model.traverse((obj) => {
       if (obj.isMesh && !isDescendantOfArm(obj)) {
-        wrapper.userData.bodyMeshes.push(obj);
+        bodyMeshesFound.push(obj);
       }
     });
+    // 몸통 부품들을 별도 그룹으로 묶어서 팔과 독립적으로 스케일 애니메이션할 수 있게 함
+    const bodyGroup = new THREE.Group();
+    model.add(bodyGroup);
+    bodyMeshesFound.forEach((m) => bodyGroup.attach(m));
+    wrapper.userData.bodyGroup = bodyGroup;
   }
   return wrapper;
 }
@@ -172,8 +186,13 @@ function buildSnowman() {
     targetHeight: 3.6,
     x: 2.7,
     baseY: -1.2,
-    partNames: ["Vert", "Cylinder"], // 브라운 계열 팔 두 개
-    glovesMesh: "Cube.007_Red_0", // 양쪽 장갑이 하나로 합쳐진 메쉬 -> 좌우로 쪼개서 각 팔에 부착
+    // 실제 정점 좌표를 분석해서 찾은 어깨(팔 부착) 지점
+    armPivots: {
+      left: [-0.313, 0.715, -0.02],
+      right: [0.313, 0.715, -0.02],
+    },
+    // 팔 스틱 2겹(Vert/Cylinder) + 장갑까지, 팔에 관련된 부품 전부
+    armMeshNames: ["Vert_Brown_0", "Cylinder__0", "Cube.007_Red_0"],
   });
 }
 
@@ -258,7 +277,11 @@ export function resetReveal() {
     rightGroup.scale.setScalar(0.0001);
     rightGroup.position.set(rightGroup.userData.baseX, rightGroup.userData.baseY, 0);
     rightGroup.rotation.set(0, 0, 0);
-    (rightGroup.userData.bodyMeshes || []).forEach((m) => (m.visible = true));
+    const bg = rightGroup.userData.bodyGroup;
+    if (bg) {
+      bg.visible = true;
+      bg.scale.setScalar(1);
+    }
   }
 }
 
@@ -300,31 +323,43 @@ function animate(time) {
     const elapsed = rightRevealAt !== null ? time - rightRevealAt : 99999;
     const endY = rightGroup.userData.baseY;
     const arms = rightGroup.userData.parts || {};
-    const bodyMeshes = rightGroup.userData.bodyMeshes || [];
+    const bodyGroup = rightGroup.userData.bodyGroup;
 
     const CLOSE_Z = 4.5; // 턱걸이 등장 시 카메라와 가까운 거리 (크게 보임)
     const FAR_Z = -4; // 인사할 때 최종 위치 (멀어져서 작게 보임)
     const LEAN = -0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도 (부호 반전됨)
 
-    const GRIP_DUR = 600; // 팔부터 턱걸이하듯 크게 올라오는 구간
+    const GRIP_DUR = 900; // 팔부터 턱걸이하듯 등장 후 몸통이 서서히 나타나는 구간
     const WALK_DUR = 1500; // 뒤돌아서 멀어지며 중앙으로 가는 구간
     const TURN_DUR = 450; // 다시 돌아서 정면을 보는 구간
 
     if (elapsed < GRIP_DUR) {
       // ---- 1) 화면 아래 안 보이는 곳에서 팔이 먼저 턱- 하고 크게 등장 (턱걸이하듯) ----
+      //         이후 몸통은 절반 지점부터 천천히(서서히 커지며) 등장
       const pp = elapsed / GRIP_DUR;
-      const risen = easeOutCubic(Math.min(pp / 0.55, 1));
-      bodyMeshes.forEach((m) => (m.visible = pp > 0.55)); // 몸통은 절반 넘어서야 짠 등장
-      rightGroup.scale.setScalar(pp > 0.55 ? easeOutBack(Math.min((pp - 0.55) / 0.45, 1)) : 1);
+      const risen = easeOutCubic(Math.min(pp / 0.4, 1));
+      rightGroup.scale.setScalar(1); // 그룹 자체는 항상 원래 크기 (팔이 갑자기 튀지 않도록)
       rightGroup.position.set(0, endY - 2.6 * (1 - risen), CLOSE_Z);
       rightGroup.rotation.set(0, 0, 0);
+
+      const BODY_START = 0.4; // 40% 지점부터 몸통이 서서히 나타남
+      const bodyP = Math.max(0, Math.min((pp - BODY_START) / (1 - BODY_START), 1));
+      const bodyEase = easeOutCubic(bodyP);
+      if (bodyGroup) {
+        bodyGroup.visible = bodyP > 0;
+        bodyGroup.scale.setScalar(Math.max(bodyEase, 0.0001));
+      }
+
       // 팔: 아래에서 뻗어 올라와 턱걸이하듯 몸을 끌어올리는 느낌
-      const grip = easeOutCubic(Math.min(pp / 0.7, 1));
-      if (arms["Vert"]) arms["Vert"].rotation.z = 1.4 - grip * 1.1;
-      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -1.4 + grip * 1.1;
+      const grip = easeOutCubic(Math.min(pp / 0.6, 1));
+      if (arms["left"]) arms["left"].rotation.z = 1.4 - grip * 1.1;
+      if (arms["right"]) arms["right"].rotation.z = -1.4 + grip * 1.1;
     } else if (elapsed < GRIP_DUR + WALK_DUR) {
       // ---- 2) 뒤돌아서(등을 보이며) 점점 멀어지듯 화면 안쪽으로 뒤뚱뒤뚱 ----
-      bodyMeshes.forEach((m) => (m.visible = true));
+      if (bodyGroup) {
+        bodyGroup.visible = true;
+        bodyGroup.scale.setScalar(1);
+      }
       rightGroup.scale.setScalar(1);
       const pp = (elapsed - GRIP_DUR) / WALK_DUR;
       const e = easeOutCubic(pp);
@@ -337,8 +372,8 @@ function animate(time) {
       rightGroup.position.set(sway * 0.4, endY + Math.abs(waddle) * 0.12 * (1 - e * 0.3), z);
       rightGroup.rotation.z = sway;
       // 걸을 땐 팔을 자연스럽게 앞뒤로 흔듦
-      if (arms["Vert"]) arms["Vert"].rotation.z = 0.3 + Math.sin(pp * Math.PI * steps) * 0.35;
-      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3 - Math.sin(pp * Math.PI * steps) * 0.35;
+      if (arms["left"]) arms["left"].rotation.z = 0.3 + Math.sin(pp * Math.PI * steps) * 0.35;
+      if (arms["right"]) arms["right"].rotation.z = -0.3 - Math.sin(pp * Math.PI * steps) * 0.35;
     } else if (elapsed < GRIP_DUR + WALK_DUR + TURN_DUR) {
       // ---- 3) 다시 뒤돌아서 정면을 봄 (멀어진 거리는 유지) ----
       const pp = (elapsed - GRIP_DUR - WALK_DUR) / TURN_DUR;
@@ -346,8 +381,8 @@ function animate(time) {
       rightGroup.position.set(0, endY, FAR_Z);
       rightGroup.rotation.y = Math.PI * (1 - e);
       rightGroup.rotation.z = LEAN * e; // 정면을 보면서 서서히 오른쪽으로 기욺
-      if (arms["Vert"]) arms["Vert"].rotation.z = 0.3;
-      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
+      if (arms["left"]) arms["left"].rotation.z = 0.3;
+      if (arms["right"]) arms["right"].rotation.z = -0.3;
     } else {
       // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 팔을 들어올린 뒤 왼쪽 팔만 흔들며 인사 ----
       const greetElapsed = elapsed - (GRIP_DUR + WALK_DUR + TURN_DUR);
@@ -361,8 +396,8 @@ function animate(time) {
       const breathe = 1 + Math.sin(t * 2.4) * 0.03;
       rightGroup.scale.set(breathe, 2 - breathe, breathe);
       // 왼쪽(화면 기준) 팔만 들어올린 뒤 흔들흔들, 반대쪽 팔은 몸에 붙인 채 고정
-      if (arms["Vert"]) arms["Vert"].rotation.z = raisedAngle + Math.sin(t * 3.2) * 0.4 * raiseP;
-      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
+      if (arms["left"]) arms["left"].rotation.z = raisedAngle + Math.sin(t * 3.2) * 0.4 * raiseP;
+      if (arms["right"]) arms["right"].rotation.z = -0.3;
 
       if (!greetingStarted) {
         greetingStarted = true;

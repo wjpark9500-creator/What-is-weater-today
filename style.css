@@ -86,6 +86,9 @@ body[data-level="RED"]    { --bg-1: #e8b3ae; --bg-2: #f7e2df; --accent: #b8564c;
   gap: 10px;
   flex-wrap: wrap;
 }
+.away-settings[hidden] {
+  display: none;
+}
 
 .away-label {
   font-size: 13px;
@@ -467,6 +470,9 @@ body[data-reason="EXTREME_HEAT"] .drip { opacity: 0.35; }
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+.stats[hidden] {
+  display: none;
 }
 
 #dayStats {

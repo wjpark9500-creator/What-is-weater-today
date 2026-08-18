@@ -246,60 +246,66 @@ function animate(time) {
 
   if (rightTarget > 0) {
     const elapsed = rightRevealAt !== null ? time - rightRevealAt : 99999;
-    const startX = rightGroup.userData.baseX; // 2.7 (오른쪽)
     const endY = rightGroup.userData.baseY;
     const arms = rightGroup.userData.parts || {};
     const bodyMeshes = rightGroup.userData.bodyMeshes || [];
 
-    const GRIP_DUR = 550; // 팔부터 턱걸이하듯 올라오는 구간
-    const WALK_DUR = 1500; // 뒤돌아서 중앙까지 걸어오는 구간
+    const CLOSE_Z = 4.5; // 턱걸이 등장 시 카메라와 가까운 거리 (크게 보임)
+    const FAR_Z = -4; // 인사할 때 최종 위치 (멀어져서 작게 보임)
+    const LEAN = 0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도
+
+    const GRIP_DUR = 600; // 팔부터 턱걸이하듯 크게 올라오는 구간
+    const WALK_DUR = 1500; // 뒤돌아서 멀어지며 중앙으로 가는 구간
     const TURN_DUR = 450; // 다시 돌아서 정면을 보는 구간
 
     if (elapsed < GRIP_DUR) {
-      // ---- 1) 팔만 먼저 턱- 올라오며 턱걸이하듯 등장 ----
+      // ---- 1) 화면 아래 안 보이는 곳에서 팔이 먼저 턱- 하고 크게 등장 (턱걸이하듯) ----
       const pp = elapsed / GRIP_DUR;
+      const risen = easeOutCubic(Math.min(pp / 0.55, 1));
       bodyMeshes.forEach((m) => (m.visible = pp > 0.55)); // 몸통은 절반 넘어서야 짠 등장
       rightGroup.scale.setScalar(pp > 0.55 ? easeOutBack(Math.min((pp - 0.55) / 0.45, 1)) : 1);
-      rightGroup.position.set(startX, endY - 0.5 * (1 - easeOutCubic(Math.min(pp / 0.55, 1))), 0);
+      rightGroup.position.set(0, endY - 2.6 * (1 - risen), CLOSE_Z);
       rightGroup.rotation.set(0, 0, 0);
       // 팔: 아래에서 뻗어 올라와 턱걸이하듯 몸을 끌어올리는 느낌
       const grip = easeOutCubic(Math.min(pp / 0.7, 1));
       if (arms["Vert"]) arms["Vert"].rotation.z = 1.4 - grip * 1.1;
       if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -1.4 + grip * 1.1;
     } else if (elapsed < GRIP_DUR + WALK_DUR) {
-      // ---- 2) 뒤돌아서 화면 중앙으로 뒤뚱뒤뚱 ----
+      // ---- 2) 뒤돌아서(등을 보이며) 점점 멀어지듯 화면 안쪽으로 뒤뚱뒤뚱 ----
       bodyMeshes.forEach((m) => (m.visible = true));
       rightGroup.scale.setScalar(1);
       const pp = (elapsed - GRIP_DUR) / WALK_DUR;
       const e = easeOutCubic(pp);
       const turnP = Math.min(pp / 0.2, 1); // 처음 20%에서 홱 돌아섬
       rightGroup.rotation.y = turnP * Math.PI;
-      const walkX = startX + (0 - startX) * e;
+      const z = CLOSE_Z + (FAR_Z - CLOSE_Z) * e; // 카메라에서 멀어짐 = 화면상 점점 작게
       const steps = 6;
       const waddle = Math.sin(pp * Math.PI * steps);
-      rightGroup.position.set(walkX, endY + Math.abs(waddle) * 0.12 * (1 - e * 0.3), 0);
-      rightGroup.rotation.z = waddle * 0.24 * (1 - e * 0.2);
+      const sway = waddle * 0.25 * (1 - e * 0.3); // 걷는 좌우 뒤뚱거림(제자리에서)
+      rightGroup.position.set(sway * 0.4, endY + Math.abs(waddle) * 0.12 * (1 - e * 0.3), z);
+      rightGroup.rotation.z = sway;
       // 걸을 땐 팔을 자연스럽게 앞뒤로 흔듦
       if (arms["Vert"]) arms["Vert"].rotation.z = 0.3 + Math.sin(pp * Math.PI * steps) * 0.35;
       if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3 - Math.sin(pp * Math.PI * steps) * 0.35;
     } else if (elapsed < GRIP_DUR + WALK_DUR + TURN_DUR) {
-      // ---- 3) 다시 뒤돌아서 정면을 봄 ----
+      // ---- 3) 다시 뒤돌아서 정면을 봄 (멀어진 거리는 유지) ----
       const pp = (elapsed - GRIP_DUR - WALK_DUR) / TURN_DUR;
       const e = easeOutCubic(pp);
-      rightGroup.position.set(0, endY, 0);
+      rightGroup.position.set(0, endY, FAR_Z);
       rightGroup.rotation.y = Math.PI * (1 - e);
-      rightGroup.rotation.z = 0;
+      rightGroup.rotation.z = LEAN * e; // 정면을 보면서 서서히 오른쪽으로 기욺
       if (arms["Vert"]) arms["Vert"].rotation.z = 0.3;
       if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
     } else {
-      // ---- 4) 정면을 보고 인사하듯 팔 흔들기 + 대기 흔들림 ----
+      // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 왼쪽 팔만 흔들며 인사 ----
       const wob = t * 2.1;
-      rightGroup.position.set(0, endY + Math.abs(Math.sin(wob * 0.6)) * 0.08, 0);
-      rightGroup.rotation.set(0, 0, Math.sin(wob) * 0.15);
-      const breathe = 1 + Math.sin(t * 2.4) * 0.035;
+      rightGroup.position.set(0, endY + Math.abs(Math.sin(wob * 0.6)) * 0.06, FAR_Z);
+      rightGroup.rotation.set(0, 0, LEAN + Math.sin(wob) * 0.03);
+      const breathe = 1 + Math.sin(t * 2.4) * 0.03;
       rightGroup.scale.set(breathe, 2 - breathe, breathe);
-      if (arms["Vert"]) arms["Vert"].rotation.z = 0.3 + Math.sin(t * 3.2) * 0.5;
-      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3 + Math.sin(t * 3.2 + Math.PI) * 0.5;
+      // 왼쪽(화면 기준) 팔만 흔들흔들, 반대쪽 팔은 몸에 붙인 채 고정
+      if (arms["Vert"]) arms["Vert"].rotation.z = 0.9 + Math.sin(t * 3.2) * 0.5;
+      if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
     }
   } else {
     rightGroup.scale.setScalar(sScale);

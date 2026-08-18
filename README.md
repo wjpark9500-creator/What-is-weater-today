@@ -75,3 +75,7 @@ vercel.json          sw.js/manifest.json 캐싱 방지 설정
 - 미세먼지 등급 기준은 환경부 기준(PM10 나쁨 81㎍/㎥↑, PM2.5 나쁨 36㎍/㎥↑)을 사용했습니다.
 - GPS 좌표 → 지역 이름 변환에는 무료 Nominatim(OpenStreetMap) 역지오코딩을 사용합니다.
 - 공공데이터포털 API는 하루 호출 한도가 있지만(서비스마다 보통 1,000회/일), 개인 사용 용도로는 충분합니다.
+
+## 이스터에그 3D 모델 출처
+
+- 눈사람 모델: "Snowman 3d illustration" by robertrestupambudi ([Sketchfab](https://sketchfab.com/3d-models/snowman-3d-illustration-fdd23b12bb6f4328ba9034fc09af8c7b)), [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) 라이선스로 사용.

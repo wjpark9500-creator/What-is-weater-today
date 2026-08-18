@@ -142,7 +142,8 @@ async function loadCharacter(url, { targetHeight, x, baseY, armPivots, armMeshNa
   // (원본 모델은 "Vert"/"Cylinder" 각각이 양쪽 팔을 동시에 포함하고 있어서,
   //  이름 기준으로는 좌/우를 분리할 수 없어 좌표(x부호) 기준으로 직접 쪼갬)
   wrapper.userData.parts = {};
-  wrapper.userData.bodyGroup = null;
+  wrapper.userData.headGroup = null;
+  wrapper.userData.restGroup = null;
   if (armPivots && armMeshNames && armMeshNames.length) {
     const leftPivot = new THREE.Group();
     leftPivot.position.set(...armPivots.left);
@@ -163,17 +164,30 @@ async function loadCharacter(url, { targetHeight, x, baseY, armPivots, armMeshNa
       }
       return false;
     };
-    const bodyMeshesFound = [];
+    // 얼굴(머리+눈+코+모자)만 먼저 보여주고, 나머지 몸통은 나중에 등장시키기 위해 분리
+    const headNames = new Set([
+      "Cube001_White_0", // 머리(작은 흰 공)
+      "Cube005_Black_0", // 눈
+      "Cube006_Orange_0", // 코
+      "Circle001_Black_0", // 모자
+      "Circle001_Piece_Red_0", // 모자 밴드
+    ]);
+    const headMeshes = [];
+    const restMeshes = [];
     model.traverse((obj) => {
       if (obj.isMesh && !isDescendantOfArm(obj)) {
-        bodyMeshesFound.push(obj);
+        (headNames.has(obj.name) ? headMeshes : restMeshes).push(obj);
       }
     });
-    // 몸통 부품들을 별도 그룹으로 묶어서 팔과 독립적으로 스케일 애니메이션할 수 있게 함
-    const bodyGroup = new THREE.Group();
-    model.add(bodyGroup);
-    bodyMeshesFound.forEach((m) => bodyGroup.attach(m));
-    wrapper.userData.bodyGroup = bodyGroup;
+    const headGroup = new THREE.Group();
+    model.add(headGroup);
+    headMeshes.forEach((m) => headGroup.attach(m));
+    wrapper.userData.headGroup = headGroup;
+
+    const restGroup = new THREE.Group();
+    model.add(restGroup);
+    restMeshes.forEach((m) => restGroup.attach(m));
+    wrapper.userData.restGroup = restGroup;
   }
   return wrapper;
 }
@@ -285,10 +299,15 @@ export function resetReveal() {
     rightGroup.scale.setScalar(0.0001);
     rightGroup.position.set(rightGroup.userData.baseX, rightGroup.userData.baseY, 0);
     rightGroup.rotation.set(0, 0, 0);
-    const bg = rightGroup.userData.bodyGroup;
-    if (bg) {
-      bg.visible = true;
-      bg.scale.setScalar(1);
+    const hg = rightGroup.userData.headGroup;
+    if (hg) {
+      hg.visible = true;
+      hg.scale.setScalar(1);
+    }
+    const rg = rightGroup.userData.restGroup;
+    if (rg) {
+      rg.visible = true;
+      rg.scale.setScalar(1);
     }
   }
 }
@@ -331,45 +350,59 @@ function animate(time) {
     const elapsed = rightRevealAt !== null ? time - rightRevealAt : 99999;
     const endY = rightGroup.userData.baseY;
     const arms = rightGroup.userData.parts || {};
-    const bodyGroup = rightGroup.userData.bodyGroup;
+    const headGroup = rightGroup.userData.headGroup;
+    const restGroup = rightGroup.userData.restGroup;
 
     const CLOSE_Z = 4.5; // 턱걸이 등장 시 카메라와 가까운 거리 (크게 보임)
     const FAR_Z = -4; // 인사할 때 최종 위치 (멀어져서 작게 보임)
-    const LEAN = -0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도 (부호 반전됨)
+    const LEAN = -0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도
 
-    const GRIP_DUR = 900; // 팔부터 턱걸이하듯 등장 후 몸통이 서서히 나타나는 구간
+    const FACE_DUR = 1800; // 얼굴만 빼꼼 내밀고 잠시 정지
+    const GRIP_DUR = 700; // 몸통+팔이 한꺼번에 등장
     const WALK_DUR = 1500; // 뒤돌아서 멀어지며 중앙으로 가는 구간
     const TURN_DUR = 450; // 다시 돌아서 정면을 보는 구간
 
-    if (elapsed < GRIP_DUR) {
-      // ---- 1) 화면 아래 안 보이는 곳에서 팔이 먼저 턱- 하고 크게 등장 (턱걸이하듯) ----
-      //         이후 몸통은 절반 지점부터 천천히(서서히 커지며) 등장
-      const pp = elapsed / GRIP_DUR;
-      const risen = easeOutCubic(Math.min(pp / 0.4, 1));
-      rightGroup.scale.setScalar(1); // 그룹 자체는 항상 원래 크기 (팔이 갑자기 튀지 않도록)
-      rightGroup.position.set(0, endY - 2.6 * (1 - risen), CLOSE_Z);
-      rightGroup.rotation.set(0, 0, 0);
-
-      const BODY_START = 0.4; // 40% 지점부터 몸통이 서서히 나타남
-      const bodyP = Math.max(0, Math.min((pp - BODY_START) / (1 - BODY_START), 1));
-      const bodyEase = easeOutCubic(bodyP);
-      if (bodyGroup) {
-        bodyGroup.visible = bodyP > 0;
-        bodyGroup.scale.setScalar(Math.max(bodyEase, 0.0001));
-      }
-
-      // 팔: 아래에서 뻗어 올라와 턱걸이하듯 몸을 끌어올리는 느낌
-      const grip = easeOutCubic(Math.min(pp / 0.6, 1));
-      if (arms["left"]) arms["left"].rotation.z = 1.4 - grip * 1.1;
-      if (arms["right"]) arms["right"].rotation.z = -1.4 + grip * 1.1;
-    } else if (elapsed < GRIP_DUR + WALK_DUR) {
-      // ---- 2) 뒤돌아서(등을 보이며) 점점 멀어지듯 화면 안쪽으로 뒤뚱뒤뚱 ----
-      if (bodyGroup) {
-        bodyGroup.visible = true;
-        bodyGroup.scale.setScalar(1);
-      }
+    if (elapsed < FACE_DUR) {
+      // ---- 0) 얼굴만 빼꼼 내밀고 잠시 가만히 있음 ----
+      const pp = elapsed / FACE_DUR;
+      const popP = easeOutBack(Math.min(pp / 0.25, 1)); // 처음 25%에서 쏙 튀어나옴
       rightGroup.scale.setScalar(1);
-      const pp = (elapsed - GRIP_DUR) / WALK_DUR;
+      rightGroup.position.set(0, endY - 0.9 * (1 - popP), CLOSE_Z);
+      rightGroup.rotation.set(0, 0, 0);
+      if (headGroup) {
+        headGroup.visible = true;
+        headGroup.scale.setScalar(Math.max(popP, 0.0001));
+      }
+      if (restGroup) {
+        restGroup.visible = false;
+        restGroup.scale.setScalar(0.0001);
+      }
+      if (arms.left) arms.left.rotation.z = 0.3;
+      if (arms.right) arms.right.rotation.z = -0.3;
+    } else if (elapsed < FACE_DUR + GRIP_DUR) {
+      // ---- 1) 몸통과 팔이 한꺼번에 짠 등장 (팔은 턱걸이하듯 살짝 힘주는 느낌) ----
+      const pp = (elapsed - FACE_DUR) / GRIP_DUR;
+      const e = easeOutBack(Math.min(pp / 0.7, 1));
+      rightGroup.scale.setScalar(1);
+      rightGroup.position.set(0, endY, CLOSE_Z);
+      rightGroup.rotation.set(0, 0, 0);
+      if (headGroup) {
+        headGroup.visible = true;
+        headGroup.scale.setScalar(1);
+      }
+      if (restGroup) {
+        restGroup.visible = true;
+        restGroup.scale.setScalar(Math.max(e, 0.0001));
+      }
+      const grip = easeOutCubic(Math.min(pp / 0.6, 1));
+      if (arms.left) arms.left.rotation.z = 1.4 - grip * 1.1;
+      if (arms.right) arms.right.rotation.z = -1.4 + grip * 1.1;
+    } else if (elapsed < FACE_DUR + GRIP_DUR + WALK_DUR) {
+      // ---- 2) 뒤돌아서(등을 보이며) 점점 멀어지듯 화면 안쪽으로 뒤뚱뒤뚱 ----
+      if (headGroup) { headGroup.visible = true; headGroup.scale.setScalar(1); }
+      if (restGroup) { restGroup.visible = true; restGroup.scale.setScalar(1); }
+      rightGroup.scale.setScalar(1);
+      const pp = (elapsed - FACE_DUR - GRIP_DUR) / WALK_DUR;
       const e = easeOutCubic(pp);
       const turnP = Math.min(pp / 0.2, 1); // 처음 20%에서 홱 돌아섬
       rightGroup.rotation.y = turnP * Math.PI;
@@ -380,32 +413,31 @@ function animate(time) {
       rightGroup.position.set(sway * 0.4, endY + Math.abs(waddle) * 0.12 * (1 - e * 0.3), z);
       rightGroup.rotation.z = sway;
       // 걸을 땐 팔을 자연스럽게 앞뒤로 흔듦
-      if (arms["left"]) arms["left"].rotation.z = 0.3 + Math.sin(pp * Math.PI * steps) * 0.35;
-      if (arms["right"]) arms["right"].rotation.z = -0.3 - Math.sin(pp * Math.PI * steps) * 0.35;
-    } else if (elapsed < GRIP_DUR + WALK_DUR + TURN_DUR) {
+      if (arms.left) arms.left.rotation.z = 0.3 + Math.sin(pp * Math.PI * steps) * 0.35;
+      if (arms.right) arms.right.rotation.z = -0.3 - Math.sin(pp * Math.PI * steps) * 0.35;
+    } else if (elapsed < FACE_DUR + GRIP_DUR + WALK_DUR + TURN_DUR) {
       // ---- 3) 다시 뒤돌아서 정면을 봄 (멀어진 거리는 유지) ----
-      const pp = (elapsed - GRIP_DUR - WALK_DUR) / TURN_DUR;
+      const pp = (elapsed - FACE_DUR - GRIP_DUR - WALK_DUR) / TURN_DUR;
       const e = easeOutCubic(pp);
       rightGroup.position.set(0, endY, FAR_Z);
       rightGroup.rotation.y = Math.PI * (1 - e);
       rightGroup.rotation.z = LEAN * e; // 정면을 보면서 서서히 오른쪽으로 기욺
-      if (arms["left"]) arms["left"].rotation.z = 0.3;
-      if (arms["right"]) arms["right"].rotation.z = -0.3;
+      if (arms.left) arms.left.rotation.z = 0.3;
+      if (arms.right) arms.right.rotation.z = -0.3;
     } else {
-      // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 팔을 들어올린 뒤 왼쪽 팔만 흔들며 인사 ----
-      const greetElapsed = elapsed - (GRIP_DUR + WALK_DUR + TURN_DUR);
+      // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 양팔을 위아래로 흔들며 인사 ----
+      const greetElapsed = elapsed - (FACE_DUR + GRIP_DUR + WALK_DUR + TURN_DUR);
       const RAISE_DUR = 400;
       const raiseP = easeOutCubic(Math.min(greetElapsed / RAISE_DUR, 1));
-      const raisedAngle = 0.3 + (1.3 - 0.3) * raiseP; // 0.3(내린 위치) -> 1.3(든 위치)
 
       const wob = t * 2.1;
       rightGroup.position.set(0, endY + Math.abs(Math.sin(wob * 0.6)) * 0.06, FAR_Z);
       rightGroup.rotation.set(0, 0, LEAN + Math.sin(wob) * 0.03);
       const breathe = 1 + Math.sin(t * 2.4) * 0.03;
       rightGroup.scale.set(breathe, 2 - breathe, breathe);
-      // 왼쪽(화면 기준) 팔만 들어올린 뒤 흔들흔들, 반대쪽 팔은 몸에 붙인 채 고정
-      if (arms["left"]) arms["left"].rotation.z = raisedAngle + Math.sin(t * 3.2) * 0.4 * raiseP;
-      if (arms["right"]) arms["right"].rotation.z = -0.3;
+      // 양쪽 팔 다 위아래로 살랑살랑 (서로 살짝 엇갈리게)
+      if (arms.left) arms.left.rotation.z = 0.9 + Math.sin(t * 3.2) * 0.4 * raiseP;
+      if (arms.right) arms.right.rotation.z = -0.9 - Math.sin(t * 3.2 + 0.6) * 0.4 * raiseP;
 
       if (!greetingStarted) {
         greetingStarted = true;

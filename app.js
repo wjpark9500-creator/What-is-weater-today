@@ -423,7 +423,11 @@ function endEasterEgg() {
     "easter-reveal-right"
   );
   if (wasMode3d && easter3dReady) {
-    setTimeout(() => easter3d.stop(), 500); // 페이드아웃 끝난 뒤 렌더 루프 정지
+    easter3d.hideBubble(); // 말풍선은 즉시 숨김
+    setTimeout(() => {
+      easter3d.resetReveal(); // 캐릭터 자세는 페이드아웃 끝난 뒤 초기화
+      easter3d.stop();
+    }, 500);
   }
 }
 

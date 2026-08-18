@@ -345,7 +345,7 @@ async function loadEaster3D() {
     const ok = await easter3d.ensureLoaded();
     if (!ok) return false;
     const canvasEl = document.getElementById("easter3dCanvas");
-    easter3d.initScene(canvasEl);
+    await easter3d.initScene(canvasEl);
     easter3dReady = true;
     return true;
   } catch (err) {

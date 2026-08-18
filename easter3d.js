@@ -68,8 +68,13 @@ function splitMeshOntoPivots(model, meshName, leftPivot, rightPivot) {
   const mesh = model.getObjectByName(meshName);
   if (!mesh || !mesh.isMesh) return;
 
+  // "model" 기준 상대좌표로 계산 — 캐릭터 전체가 world 상에서
+  // (x=2.7 등) 옆으로 이동해 있는 상태라, world 좌표 0을 기준으로 좌우를 나누면
+  // 전부 한쪽으로 쏠려버린다. 반드시 캐릭터 자신의 중심(= model 기준) 좌표로 나눠야 함.
+  model.updateWorldMatrix(true, false);
   mesh.updateWorldMatrix(true, false);
-  const worldMatrix = mesh.matrixWorld.clone();
+  const modelInverse = new THREE.Matrix4().copy(model.matrixWorld).invert();
+  const relativeMatrix = new THREE.Matrix4().multiplyMatrices(modelInverse, mesh.matrixWorld);
 
   const geom = mesh.geometry;
   const posAttr = geom.attributes.position;
@@ -83,24 +88,22 @@ function splitMeshOntoPivots(model, meshName, leftPivot, rightPivot) {
     const tri = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
     tri.forEach((vi) => {
       v.fromBufferAttribute(posAttr, vi);
-      v.applyMatrix4(worldMatrix);
+      v.applyMatrix4(relativeMatrix);
       sumX += v.x;
     });
     (sumX / 3 < 0 ? leftIdx : rightIdx).push(...tri);
   }
 
   const bakedGeom = geom.clone();
-  bakedGeom.applyMatrix4(worldMatrix); // 정점을 현재 월드 좌표로 구움 (좌우 조각이 이 좌표를 공유)
+  bakedGeom.applyMatrix4(relativeMatrix); // model 기준 좌표로 구움
 
   function attach(indices, pivot) {
     if (indices.length === 0) return;
     const g = bakedGeom.clone();
     g.setIndex(indices);
     const half = new THREE.Mesh(g, mesh.material);
-    pivot.updateWorldMatrix(true, false);
-    const pivotInverse = new THREE.Matrix4().copy(pivot.matrixWorld).invert();
-    half.matrix.copy(pivotInverse);
-    half.matrix.decompose(half.position, half.quaternion, half.scale);
+    // pivot은 model의 직속 자식이며 위치(position)만 갖고 있으므로 그만큼만 상쇄하면 됨
+    half.position.set(-pivot.position.x, -pivot.position.y, -pivot.position.z);
     pivot.add(half);
   }
 
@@ -192,7 +195,8 @@ function buildSnowman() {
       right: [0.313, 0.715, -0.02],
     },
     // 팔 스틱 2겹(Vert/Cylinder) + 장갑까지, 팔에 관련된 부품 전부
-    armMeshNames: ["Vert_Brown_0", "Cylinder__0", "Cube.007_Red_0"],
+    // (Three.js GLTFLoader가 이름의 점(.)을 제거하고 로드하므로 "Cube.007" -> "Cube007")
+    armMeshNames: ["Vert_Brown_0", "Cylinder__0", "Cube007_Red_0"],
   });
 }
 

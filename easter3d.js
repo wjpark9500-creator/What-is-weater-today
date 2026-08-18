@@ -363,15 +363,25 @@ function animate(time) {
     const TURN_DUR = 450; // 다시 돌아서 정면을 보는 구간
 
     if (elapsed < FACE_DUR) {
-      // ---- 0) 얼굴만 빼꼼 내밀고 잠시 가만히 있음 ----
+      // ---- 0) 화면 아래에서 얼굴만 조심스럽게 살짝 올라와, 눈치보듯 좌우로 갸웃거림 ----
       const pp = elapsed / FACE_DUR;
-      const popP = easeOutBack(Math.min(pp / 0.25, 1)); // 처음 25%에서 쏙 튀어나옴
+      const RISE_FRAC = 0.35; // 처음 35% 동안만 천천히 올라옴 (통통 튀지 않게)
+      const riseP = easeOutCubic(Math.min(pp / RISE_FRAC, 1));
+      const belowY = endY - 3.4; // 화면 아래 안 보이는 위치
+      const peekY = endY - 1.85; // 살짝만 걸쳐 보이는 위치 (몸 전체가 아니라 위쪽 일부만)
       rightGroup.scale.setScalar(1);
-      rightGroup.position.set(0, endY - 0.9 * (1 - popP), CLOSE_Z);
-      rightGroup.rotation.set(0, 0, 0);
+      rightGroup.position.y = belowY + (peekY - belowY) * riseP;
+      rightGroup.position.z = CLOSE_Z;
+
+      // 다 올라온 뒤부터는 조심스럽게 좌우로 눈치보는 느낌 (천천히, 작게)
+      const glanceP = Math.max(0, (pp - RISE_FRAC) / (1 - RISE_FRAC));
+      const glance = Math.sin(glanceP * Math.PI * 2.3) * 0.14 * Math.min(glanceP * 3, 1);
+      rightGroup.rotation.set(0, glance, 0);
+      rightGroup.position.x = glance * 0.25;
+
       if (headGroup) {
         headGroup.visible = true;
-        headGroup.scale.setScalar(Math.max(popP, 0.0001));
+        headGroup.scale.setScalar(Math.max(riseP, 0.0001));
       }
       if (restGroup) {
         restGroup.visible = false;
@@ -380,11 +390,12 @@ function animate(time) {
       if (arms.left) arms.left.rotation.z = 0.3;
       if (arms.right) arms.right.rotation.z = -0.3;
     } else if (elapsed < FACE_DUR + GRIP_DUR) {
-      // ---- 1) 몸통과 팔이 한꺼번에 짠 등장 (팔은 턱걸이하듯 살짝 힘주는 느낌) ----
+      // ---- 1) 몸통과 팔이 한꺼번에 쭉 올라오며 등장 (팔은 턱걸이하듯 살짝 힘주는 느낌) ----
       const pp = (elapsed - FACE_DUR) / GRIP_DUR;
       const e = easeOutBack(Math.min(pp / 0.7, 1));
+      const riseUpP = easeOutCubic(Math.min(pp / 0.5, 1));
       rightGroup.scale.setScalar(1);
-      rightGroup.position.set(0, endY, CLOSE_Z);
+      rightGroup.position.set(0, endY - 1.85 * (1 - riseUpP), CLOSE_Z);
       rightGroup.rotation.set(0, 0, 0);
       if (headGroup) {
         headGroup.visible = true;

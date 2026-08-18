@@ -79,3 +79,4 @@ vercel.json          sw.js/manifest.json 캐싱 방지 설정
 ## 이스터에그 3D 모델 출처
 
 - 눈사람 모델: "Snowman 3d illustration" by robertrestupambudi ([Sketchfab](https://sketchfab.com/3d-models/snowman-3d-illustration-fdd23b12bb6f4328ba9034fc09af8c7b)), [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) 라이선스로 사용.
+- 소년 모델: "Cartoon Boy in a Winter Jacket" by 2021-Hydrema912-2021 ([Sketchfab](https://sketchfab.com/3d-models/cartoon-boy-in-a-winter-jacket-05d7a952af224e1b819d0ee41140fe1c)), [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/) 라이선스로 사용. 원본 대비 웹용으로 지오메트리 단순화(약 107만→15만 삼각형) 및 텍스처 축소(2048px→512px)를 거쳤습니다.

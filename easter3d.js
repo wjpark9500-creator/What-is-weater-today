@@ -309,6 +309,9 @@ export function resetReveal() {
       rg.visible = true;
       rg.scale.setScalar(1);
     }
+    const p = rightGroup.userData.parts;
+    if (p?.left) p.left.visible = true;
+    if (p?.right) p.right.visible = true;
   }
 }
 
@@ -387,8 +390,8 @@ function animate(time) {
         restGroup.visible = false;
         restGroup.scale.setScalar(0.0001);
       }
-      if (arms.left) arms.left.rotation.z = 0.3;
-      if (arms.right) arms.right.rotation.z = -0.3;
+      if (arms.left) { arms.left.visible = false; arms.left.rotation.z = 0.3; }
+      if (arms.right) { arms.right.visible = false; arms.right.rotation.z = -0.3; }
     } else if (elapsed < FACE_DUR + GRIP_DUR) {
       // ---- 1) 몸통과 팔이 한꺼번에 쭉 올라오며 등장 (팔은 턱걸이하듯 살짝 힘주는 느낌) ----
       const pp = (elapsed - FACE_DUR) / GRIP_DUR;
@@ -406,8 +409,8 @@ function animate(time) {
         restGroup.scale.setScalar(Math.max(e, 0.0001));
       }
       const grip = easeOutCubic(Math.min(pp / 0.6, 1));
-      if (arms.left) arms.left.rotation.z = 1.4 - grip * 1.1;
-      if (arms.right) arms.right.rotation.z = -1.4 + grip * 1.1;
+      if (arms.left) { arms.left.visible = true; arms.left.rotation.z = 1.4 - grip * 1.1; }
+      if (arms.right) { arms.right.visible = true; arms.right.rotation.z = -1.4 + grip * 1.1; }
     } else if (elapsed < FACE_DUR + GRIP_DUR + WALK_DUR) {
       // ---- 2) 뒤돌아서(등을 보이며) 점점 멀어지듯 화면 안쪽으로 뒤뚱뒤뚱 ----
       if (headGroup) { headGroup.visible = true; headGroup.scale.setScalar(1); }

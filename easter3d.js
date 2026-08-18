@@ -63,8 +63,52 @@ async function getLoader() {
   return gltfLoader;
 }
 
+// 장갑처럼 좌우 팔에 걸쳐 하나로 합쳐진 메쉬를 반으로 쪼개 각 팔 노드에 다시 붙임
+function splitMeshBetweenArms(model, meshName, leftArmNode, rightArmNode) {
+  const mesh = model.getObjectByName(meshName);
+  if (!mesh || !mesh.isMesh || !leftArmNode || !rightArmNode) return;
+
+  mesh.updateWorldMatrix(true, false);
+  const worldMatrix = mesh.matrixWorld.clone();
+
+  const geom = mesh.geometry;
+  const posAttr = geom.attributes.position;
+  const index = geom.index;
+  const v = new THREE.Vector3();
+  const leftIdx = [];
+  const rightIdx = [];
+
+  for (let i = 0; i < index.count; i += 3) {
+    let sumX = 0;
+    const tri = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+    tri.forEach((vi) => {
+      v.fromBufferAttribute(posAttr, vi);
+      v.applyMatrix4(worldMatrix);
+      sumX += v.x;
+    });
+    (sumX / 3 < 0 ? leftIdx : rightIdx).push(...tri);
+  }
+
+  function buildHalf(indices, parentNode) {
+    if (indices.length === 0) return;
+    const g = geom.clone();
+    g.setIndex(indices);
+    g.applyMatrix4(worldMatrix); // 정점을 월드 좌표로 구움
+    const half = new THREE.Mesh(g, mesh.material);
+    parentNode.updateWorldMatrix(true, false);
+    const parentInverse = new THREE.Matrix4().copy(parentNode.matrixWorld).invert();
+    half.matrix.copy(parentInverse);
+    half.matrix.decompose(half.position, half.quaternion, half.scale);
+    parentNode.add(half);
+  }
+
+  buildHalf(leftIdx, leftArmNode);
+  buildHalf(rightIdx, rightArmNode);
+  mesh.parent.remove(mesh);
+}
+
 // 공통 GLB 로더: 원본 모델 크기가 제각각이므로 목표 높이에 맞춰 자동 스케일 + 바닥을 y=0에 맞춤
-async function loadCharacter(url, { targetHeight, x, baseY, partNames }) {
+async function loadCharacter(url, { targetHeight, x, baseY, partNames, glovesMesh }) {
   const wrapper = new THREE.Group();
   const loader = await getLoader();
   const gltf = await loader.loadAsync(url);
@@ -97,6 +141,9 @@ async function loadCharacter(url, { targetHeight, x, baseY, partNames }) {
     partNames.forEach((n, i) => {
       if (armObjs[i]) wrapper.userData.parts[n] = armObjs[i];
     });
+    if (glovesMesh && armObjs.length === 2) {
+      splitMeshBetweenArms(model, glovesMesh, armObjs[0], armObjs[1]);
+    }
     const isDescendantOfArm = (obj) => {
       let p = obj;
       while (p) {
@@ -126,6 +173,7 @@ function buildSnowman() {
     x: 2.7,
     baseY: -1.2,
     partNames: ["Vert", "Cylinder"], // 브라운 계열 팔 두 개
+    glovesMesh: "Cube.007_Red_0", // 양쪽 장갑이 하나로 합쳐진 메쉬 -> 좌우로 쪼개서 각 팔에 부착
   });
 }
 
@@ -181,6 +229,7 @@ function easeOutCubic(t) {
 
 let leftRevealAt = null;
 let rightRevealAt = null;
+let greetingStarted = false;
 
 export function revealLeft() {
   if (leftTarget === 0) leftRevealAt = performance.now();
@@ -197,6 +246,9 @@ export function resetReveal() {
   rightProgress = 0;
   leftRevealAt = null;
   rightRevealAt = null;
+  greetingStarted = false;
+  const bubble = document.getElementById("snowmanBubble");
+  if (bubble) bubble.hidden = true;
   if (leftGroup) {
     leftGroup.scale.setScalar(0.0001);
     leftGroup.position.set(leftGroup.userData.baseX, leftGroup.userData.baseY, 0);
@@ -252,7 +304,7 @@ function animate(time) {
 
     const CLOSE_Z = 4.5; // 턱걸이 등장 시 카메라와 가까운 거리 (크게 보임)
     const FAR_Z = -4; // 인사할 때 최종 위치 (멀어져서 작게 보임)
-    const LEAN = 0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도
+    const LEAN = -0.16; // 인사할 때 몸을 오른쪽으로 기울이는 각도 (부호 반전됨)
 
     const GRIP_DUR = 600; // 팔부터 턱걸이하듯 크게 올라오는 구간
     const WALK_DUR = 1500; // 뒤돌아서 멀어지며 중앙으로 가는 구간
@@ -297,15 +349,26 @@ function animate(time) {
       if (arms["Vert"]) arms["Vert"].rotation.z = 0.3;
       if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
     } else {
-      // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 왼쪽 팔만 흔들며 인사 ----
+      // ---- 4) 정면에서 몸을 오른쪽으로 기울인 채, 팔을 들어올린 뒤 왼쪽 팔만 흔들며 인사 ----
+      const greetElapsed = elapsed - (GRIP_DUR + WALK_DUR + TURN_DUR);
+      const RAISE_DUR = 400;
+      const raiseP = easeOutCubic(Math.min(greetElapsed / RAISE_DUR, 1));
+      const raisedAngle = 0.3 + (1.3 - 0.3) * raiseP; // 0.3(내린 위치) -> 1.3(든 위치)
+
       const wob = t * 2.1;
       rightGroup.position.set(0, endY + Math.abs(Math.sin(wob * 0.6)) * 0.06, FAR_Z);
       rightGroup.rotation.set(0, 0, LEAN + Math.sin(wob) * 0.03);
       const breathe = 1 + Math.sin(t * 2.4) * 0.03;
       rightGroup.scale.set(breathe, 2 - breathe, breathe);
-      // 왼쪽(화면 기준) 팔만 흔들흔들, 반대쪽 팔은 몸에 붙인 채 고정
-      if (arms["Vert"]) arms["Vert"].rotation.z = 0.9 + Math.sin(t * 3.2) * 0.5;
+      // 왼쪽(화면 기준) 팔만 들어올린 뒤 흔들흔들, 반대쪽 팔은 몸에 붙인 채 고정
+      if (arms["Vert"]) arms["Vert"].rotation.z = raisedAngle + Math.sin(t * 3.2) * 0.4 * raiseP;
       if (arms["Cylinder"]) arms["Cylinder"].rotation.z = -0.3;
+
+      if (!greetingStarted) {
+        greetingStarted = true;
+        const bubble = document.getElementById("snowmanBubble");
+        if (bubble) bubble.hidden = false;
+      }
     }
   } else {
     rightGroup.scale.setScalar(sScale);

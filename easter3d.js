@@ -19,10 +19,10 @@ const SNOW_COUNT = 1400;
 export async function ensureLoaded() {
   if (THREE) return true;
   try {
-    THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+    THREE = await import("three");
     return true;
   } catch (err) {
-    console.warn("Three.js 로드 실패:", err);
+    console.warn("Three.js 로드 실패:", err.message, err.stack);
     return false;
   }
 }
@@ -56,12 +56,8 @@ function buildSnow() {
 
 async function getLoader() {
   if (gltfLoader) return gltfLoader;
-  const { GLTFLoader } = await import(
-    "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
-  );
-  const { MeshoptDecoder } = await import(
-    "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js"
-  );
+  const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+  const { MeshoptDecoder } = await import("three/addons/libs/meshopt_decoder.module.js");
   gltfLoader = new GLTFLoader();
   gltfLoader.setMeshoptDecoder(MeshoptDecoder);
   return gltfLoader;

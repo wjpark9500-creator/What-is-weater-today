@@ -380,7 +380,7 @@ async function startBlizzard() {
   document.body.classList.remove("easter-reveal-left", "easter-reveal-right", "easter-egg", "easter-egg-3d");
 
   clearTimeout(easterEgg.timer);
-  easterEgg.timer = setTimeout(endEasterEgg, 5000);
+  easterEgg.timer = setTimeout(endEasterEgg, 8500);
 
   const ok = await loadEaster3D();
   if (!easterEgg.active) return; // 로딩 중에 이미 종료된 경우 방지
@@ -399,7 +399,7 @@ function revealPane(side) {
   if (easterEgg.stage === "blizzard") {
     easterEgg.stage = "reveal";
     clearTimeout(easterEgg.timer);
-    easterEgg.timer = setTimeout(endEasterEgg, 5000);
+    easterEgg.timer = setTimeout(endEasterEgg, 8500);
   }
   if (easterEgg.mode === "3d" && easter3dReady) {
     if (side === "left") easter3d.revealLeft();

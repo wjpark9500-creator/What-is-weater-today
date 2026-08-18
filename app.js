@@ -349,7 +349,7 @@ async function loadEaster3D() {
     easter3dReady = true;
     return true;
   } catch (err) {
-    console.warn("3D 이스터에그 초기화 실패, 2D로 대체합니다:", err);
+    console.warn("3D 이스터에그 초기화 실패, 2D로 대체합니다:", err.message, err);
     return false;
   }
 }

@@ -269,7 +269,6 @@ let rightRevealAt = null;
 let greetingStarted = false;
 
 export function hideBubble() {
-  greetingStarted = false;
   const bubble = document.getElementById("snowmanBubble");
   if (bubble) bubble.hidden = true;
 }
@@ -289,6 +288,7 @@ export function resetReveal() {
   rightProgress = 0;
   leftRevealAt = null;
   rightRevealAt = null;
+  greetingStarted = false;
   hideBubble();
   if (leftGroup) {
     leftGroup.scale.setScalar(0.0001);

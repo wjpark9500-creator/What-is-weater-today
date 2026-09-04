@@ -322,11 +322,33 @@ body[data-reason="GOOD_DAY"] .scene-sun {
 .sun-rays {
   transform-box: fill-box;
   transform-origin: 50% 50%;
-  animation: ray-pulse 3200ms ease-in-out infinite;
+  animation: ray-pulse 3200ms ease-in-out infinite, ray-drift 26s linear infinite;
 }
 @keyframes ray-pulse {
-  0%, 100% { opacity: 0.55; transform: scale(0.92); }
-  50% { opacity: 1; transform: scale(1.06); }
+  0%, 100% { opacity: 0.55; transform: scale(0.92) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.06) rotate(0deg); }
+}
+@keyframes ray-drift {
+  0%   { rotate: 0deg; }
+  100% { rotate: 360deg; }
+}
+.sun-glow {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: glow-breathe 4200ms ease-in-out infinite;
+}
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.75; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+.sun-core {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: core-shimmer 5000ms ease-in-out infinite;
+}
+@keyframes core-shimmer {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
 }
 
 /* ===== 구름 (AIR_MODERATE, MIXED_CONDITIONS, POOR_DAY) ===== */
@@ -353,25 +375,6 @@ body[data-reason="POOR_DAY"] .cloud-3 { opacity: 1; }
 @keyframes drift-b {
   0%, 100% { transform: translateX(8px); }
   50% { transform: translateX(-8px); }
-}
-
-/* ===== 참새 (COMFORTABLE, GOOD_DAY) ===== */
-.scene-bird {
-  opacity: 0;
-  transform: translateX(38px);
-  transform-box: fill-box;
-}
-body[data-reason="COMFORTABLE"] .scene-bird,
-body[data-reason="GOOD_DAY"] .scene-bird {
-  animation: bird-visit 13s ease-in-out infinite;
-}
-@keyframes bird-visit {
-  0%   { opacity: 0; transform: translateX(38px); }
-  10%  { opacity: 1; transform: translateX(0); }
-  55%  { opacity: 1; transform: translateX(0) translateY(-1.5px); }
-  72%  { opacity: 1; transform: translateX(0); }
-  85%  { opacity: 0; transform: translateX(-32px); }
-  100% { opacity: 0; transform: translateX(38px); }
 }
 
 /* ===== 김서림 (EXTREME_HEAT) ===== */
@@ -677,7 +680,6 @@ body.easter-active #rightPane {
 /* 눈보라 동안 판정 장식은 숨김, 창문은 굳게 닫힌 채 격렬하게 흔들림 (2D 폴백 + 3D 공통) */
 body.easter-active .scene-sun,
 body.easter-active .scene-clouds,
-body.easter-active .scene-bird,
 body.easter-active .scene-dust,
 body.easter-active .scene-fog {
   opacity: 0 !important;

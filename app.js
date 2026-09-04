@@ -220,15 +220,44 @@ async function loadDayVerdict() {
   }
 }
 
-function locateByGPS() {
+// 최근 GPS 좌표 캐시 - 매번 새로 위치를 요청하지 않도록 함
+const GPS_CACHE_KEY = "ventApp.gpsCache";
+const GPS_CACHE_MAX_AGE = 30 * 60 * 1000; // 30분
+
+function loadCachedGPS() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GPS_CACHE_KEY));
+    if (saved?.lat && saved?.lon && Date.now() - saved.at < GPS_CACHE_MAX_AGE) {
+      return saved;
+    }
+  } catch (_) {}
+  return null;
+}
+function saveCachedGPS(lat, lon) {
+  try {
+    localStorage.setItem(GPS_CACHE_KEY, JSON.stringify({ lat, lon, at: Date.now() }));
+  } catch (_) {}
+}
+
+function locateByGPS(forceFresh = false) {
   if (!navigator.geolocation) {
     showError("이 브라우저는 위치 확인을 지원하지 않습니다. 직접 선택을 이용해주세요.");
     return;
   }
+
+  if (!forceFresh) {
+    const cached = loadCachedGPS();
+    if (cached) {
+      loadVerdict({ lat: cached.lat, lon: cached.lon, label: "현재 위치" });
+      return;
+    }
+  }
+
   setLoading(true);
   el.locationLabel.textContent = "현재 위치 확인 중…";
   navigator.geolocation.getCurrentPosition(
     (pos) => {
+      saveCachedGPS(pos.coords.latitude, pos.coords.longitude);
       loadVerdict({
         lat: pos.coords.latitude,
         lon: pos.coords.longitude,
@@ -250,7 +279,7 @@ el.citySelect.addEventListener("change", () => {
   loadVerdict({ lat: city.lat, lon: city.lon, sido: city.sido, label: city.name });
 });
 
-el.locateBtn.addEventListener("click", locateByGPS);
+el.locateBtn.addEventListener("click", () => locateByGPS(true));
 
 function switchMode(newMode) {
   if (mode === newMode) return;

@@ -314,7 +314,6 @@ body[data-reason="COMFORTABLE"] .scene-sun,
 body[data-reason="GOOD_DAY"] .scene-sun {
   opacity: 1;
 }
-.sun-body { fill: #ffd876; }
 .sun-rays line {
   stroke: #ffe9b0;
   stroke-width: 2.5;
@@ -366,9 +365,6 @@ body[data-reason="COMFORTABLE"] .scene-bird,
 body[data-reason="GOOD_DAY"] .scene-bird {
   animation: bird-visit 13s ease-in-out infinite;
 }
-.bird-body { fill: #8a6a4a; }
-.bird-beak { fill: #e0a24e; }
-.bird-tail { stroke: #6b4f36; stroke-width: 1.5; fill: none; }
 @keyframes bird-visit {
   0%   { opacity: 0; transform: translateX(38px); }
   10%  { opacity: 1; transform: translateX(0); }
